@@ -14,532 +14,426 @@
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark nightbite-navbar sticky-top">
-        <div class="container">
-
-            <a class="navbar-brand nightbite-logo" href="{{ url_for('main.index') }}">
+    <nav class="navbar navbar-dark nightbite-navbar sticky-top">
+        <div class="container flex-wrap gap-3">
+            <a class="navbar-brand nightbite-logo"
+               href="{{ url_for('main.index') }}">
                 NIGHT<span>BITE</span>
             </a>
 
-            <button
-                class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#mainNavigation"
-                aria-controls="mainNavigation"
-                aria-expanded="false"
-                aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <ul class="navbar-nav flex-row flex-wrap gap-3 align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="{{ url_for('main.index') }}">
+                        Discover
+                    </a>
+                </li>
 
-            <div class="collapse navbar-collapse" id="mainNavigation">
+                <li class="nav-item">
+                    <a class="nav-link active"
+                       aria-current="page"
+                       href="{{ url_for('main.create_event') }}">
+                        Create Event
+                    </a>
+                </li>
 
-                <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="{{ url_for('main.bookings') }}">
+                        My Bookings
+                    </a>
+                </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">
-                            Discover
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('main.create_event') }}">
-                            Create Event
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.bookings') }}">
-                            My Bookings
-                        </a>
-                    </li>
-
-                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
-                        <a class="btn btn-nightbite-outline" href="{{ url_for('auth.login') }}">
+                <li class="nav-item">
+                    {% if current_user.is_authenticated %}
+                        <span class="navbar-text">
+                            Hi, {{ current_user.name }}
+                        </span>
+                    {% else %}
+                        <a class="btn btn-nightbite-outline"
+                           href="{{ url_for('auth.login') }}">
                             Sign In
                         </a>
-                    </li>
-
-                </ul>
-
-            </div>
+                    {% endif %}
+                </li>
+            </ul>
         </div>
     </nav>
-
 
     <!-- Page Header -->
     <header class="page-header">
         <div class="container">
-
             <p class="section-kicker">Host with NIGHTBITE</p>
-
             <h1>Create an event</h1>
-
             <p>
                 Share your food experience with Brisbane and give guests
                 everything they need to discover, plan and book.
             </p>
-
         </div>
     </header>
 
+    <!-- Event form fields and validation - Aarnav's section -->
+    {% macro render_field(field, css_class="form-control form-control-lg") %}
+        {{ field.label(class="form-label") }}
+
+        {% if field.errors %}
+            {{ field(
+                class=css_class ~ " is-invalid",
+                aria_invalid="true",
+                aria_describedby=field.id ~ "-errors",
+                **kwargs
+            ) }}
+
+            <div id="{{ field.id }}-errors" class="invalid-feedback">
+                {% for error in field.errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% else %}
+            {{ field(class=css_class, **kwargs) }}
+        {% endif %}
+    {% endmacro %}
 
     <!-- Form -->
     <main class="form-page-section">
-
         <div class="container">
-
             <div class="row justify-content-center">
-
                 <div class="col-xl-10">
 
-                    <form class="event-form">
+                    {% for message in get_flashed_messages() %}
+                        <div class="alert alert-info" role="status">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
 
+                    {% if form.errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Your event has not been saved.</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for field_name, errors in form.errors.items() %}
+                                    {% for error in errors %}
+                                        <li>
+                                            {{ form[field_name].label.text }}:
+                                            {{ error }}
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form
+                        class="event-form"
+                        method="post"
+                        action="{{ url_for('main.create_event') }}"
+                        enctype="multipart/form-data"
+                        novalidate>
+
+                        {{ form.hidden_tag() }}
 
                         <!-- Basic Information -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">01</span>
-
                                 <div>
                                     <h2>Basic information</h2>
                                     <p>
-                                        Tell guests what your event is and what makes it worth attending.
+                                        Tell guests what your event is and
+                                        what makes it worth attending.
                                     </p>
                                 </div>
                             </div>
 
-
                             <div class="row g-4">
-
                                 <div class="col-12">
-                                    <label for="eventName" class="form-label">
-                                        Event name
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        class="form-control form-control-lg"
-                                        id="eventName"
+                                    {{ render_field(
+                                        form.title,
                                         placeholder="e.g. Riverside Night Bites"
-                                        required>
+                                    ) }}
                                 </div>
-
 
                                 <div class="col-md-6">
-                                    <label for="category" class="form-label">
-                                        Category
-                                    </label>
-
-                                    <select id="category" class="form-select form-select-lg" required>
-                                        <option value="" selected disabled>Select a category</option>
-                                        <option>Night Markets</option>
-                                        <option>Street Food</option>
-                                        <option>Pop-Ups</option>
-                                        <option>Cultural Food</option>
-                                        <option>Dessert</option>
-                                        <option>Food Trucks</option>
-                                    </select>
+                                    {{ render_field(
+                                        form.category_id,
+                                        css_class="form-select form-select-lg"
+                                    ) }}
                                 </div>
-
 
                                 <div class="col-md-6">
-                                    <label for="cuisine" class="form-label">
-                                        Cuisine type
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        class="form-control form-control-lg"
-                                        id="cuisine"
-                                        placeholder="e.g. Asian street food">
+                                    {{ render_field(
+                                        form.cuisine,
+                                        placeholder="e.g. Asian street food"
+                                    ) }}
                                 </div>
-
 
                                 <div class="col-12">
-                                    <label for="description" class="form-label">
-                                        Event description
-                                    </label>
-
-                                    <textarea
-                                        class="form-control"
-                                        id="description"
-                                        rows="6"
-                                        placeholder="Describe the atmosphere, food, activities and what guests can expect."
-                                        required></textarea>
-
+                                    {{ render_field(
+                                        form.description,
+                                        rows=6,
+                                        placeholder="Describe the food, atmosphere and activities."
+                                    ) }}
                                     <div class="form-text">
-                                        Include enough detail to help guests decide whether the event suits them.
+                                        Include enough detail to help guests
+                                        decide whether the event suits them.
                                     </div>
                                 </div>
-
                             </div>
-
                         </section>
-
 
                         <!-- Date and Location -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">02</span>
-
                                 <div>
                                     <h2>Date and location</h2>
                                     <p>
-                                        Let guests know where and when the event is happening.
+                                        Let guests know where and when
+                                        the event is happening.
                                     </p>
                                 </div>
                             </div>
 
-
                             <div class="row g-4">
+                                <div class="col-md-6">
+                                    {{ render_field(form.start_datetime) }}
+                                </div>
 
                                 <div class="col-md-6">
-                                    <label for="eventDate" class="form-label">
-                                        Event date
-                                    </label>
-
-                                    <input
-                                        type="date"
-                                        class="form-control form-control-lg"
-                                        id="eventDate"
-                                        required>
+                                    {{ render_field(form.end_datetime) }}
                                 </div>
 
-
-                                <div class="col-md-3">
-                                    <label for="startTime" class="form-label">
-                                        Start time
-                                    </label>
-
-                                    <input
-                                        type="time"
-                                        class="form-control form-control-lg"
-                                        id="startTime"
-                                        required>
-                                </div>
-
-
-                                <div class="col-md-3">
-                                    <label for="endTime" class="form-label">
-                                        End time
-                                    </label>
-
-                                    <input
-                                        type="time"
-                                        class="form-control form-control-lg"
-                                        id="endTime"
-                                        required>
-                                </div>
-
-
-                                <div class="col-md-7">
-                                    <label for="venue" class="form-label">
-                                        Venue
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        class="form-control form-control-lg"
-                                        id="venue"
+                                <div class="col-12">
+                                    {{ render_field(
+                                        form.venue,
                                         placeholder="e.g. South Bank Cultural Forecourt"
-                                        required>
+                                    ) }}
                                 </div>
 
+                                <div class="col-12">
+                                    {{ render_field(form.street_address) }}
+                                </div>
 
-                                <div class="col-md-5">
-                                    <label for="suburb" class="form-label">
-                                        Suburb
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        class="form-control form-control-lg"
-                                        id="suburb"
+                                <div class="col-md-6">
+                                    {{ render_field(
+                                        form.suburb,
                                         placeholder="e.g. South Brisbane"
-                                        required>
+                                    ) }}
                                 </div>
 
+                                <div class="col-md-6">
+                                    {{ render_field(
+                                        form.state,
+                                        css_class="form-select form-select-lg"
+                                    ) }}
+                                </div>
                             </div>
-
                         </section>
-
 
                         <!-- Food Event Details -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">03</span>
-
                                 <div>
                                     <h2>Guest information</h2>
                                     <p>
-                                        Add food-specific details that can influence whether guests attend.
+                                        Add food-specific details that can
+                                        influence whether guests attend.
                                     </p>
                                 </div>
                             </div>
 
-
                             <div class="row g-4">
-
                                 <div class="col-12">
-                                    <label class="form-label">
-                                        Dietary options
-                                    </label>
+                                    <fieldset>
+                                        <legend class="form-label fs-6">
+                                            Dietary options
+                                        </legend>
 
-                                    <div class="dietary-grid">
-
-                                        <div class="form-check dietary-option">
-                                            <input class="form-check-input" type="checkbox" id="vegetarian">
-                                            <label class="form-check-label" for="vegetarian">
-                                                Vegetarian
-                                            </label>
+                                        <div class="dietary-grid">
+                                            {% for field in [
+                                                form.vegetarian,
+                                                form.vegan,
+                                                form.gluten_free,
+                                                form.halal
+                                            ] %}
+                                                <div class="form-check dietary-option">
+                                                    {{ field(class="form-check-input") }}
+                                                    {{ field.label(class="form-check-label") }}
+                                                </div>
+                                            {% endfor %}
                                         </div>
-
-                                        <div class="form-check dietary-option">
-                                            <input class="form-check-input" type="checkbox" id="vegan">
-                                            <label class="form-check-label" for="vegan">
-                                                Vegan
-                                            </label>
-                                        </div>
-
-                                        <div class="form-check dietary-option">
-                                            <input class="form-check-input" type="checkbox" id="glutenFree">
-                                            <label class="form-check-label" for="glutenFree">
-                                                Gluten-free
-                                            </label>
-                                        </div>
-
-                                        <div class="form-check dietary-option">
-                                            <input class="form-check-input" type="checkbox" id="halal">
-                                            <label class="form-check-label" for="halal">
-                                                Halal
-                                            </label>
-                                        </div>
-
-                                    </div>
+                                    </fieldset>
                                 </div>
 
-
                                 <div class="col-12">
-                                    <label for="accessibility" class="form-label">
-                                        Accessibility information
-                                    </label>
-
-                                    <textarea
-                                        class="form-control"
-                                        id="accessibility"
-                                        rows="4"
-                                        placeholder="Describe wheelchair access, accessible facilities, seating or other accessibility information."></textarea>
+                                    {{ render_field(
+                                        form.accessibility,
+                                        rows=4,
+                                        placeholder="Describe access, facilities and seating."
+                                    ) }}
                                 </div>
-
                             </div>
-
                         </section>
-
 
                         <!-- Tickets -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">04</span>
-
                                 <div>
                                     <h2>Tickets</h2>
                                     <p>
-                                        Set your ticket price and event capacity.
+                                        Set your ticket price and total
+                                        event capacity.
                                     </p>
                                 </div>
                             </div>
 
-
                             <div class="row g-4">
-
                                 <div class="col-md-6">
-                                    <label for="ticketPrice" class="form-label">
-                                        Ticket price
-                                    </label>
-
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">$</span>
-
-                                        <input
-                                            type="number"
-                                            class="form-control"
-                                            id="ticketPrice"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            required>
+                                    {{ render_field(
+                                        form.ticket_price,
+                                        type="number",
+                                        min="0",
+                                        step="0.01",
+                                        placeholder="0.00"
+                                    ) }}
+                                    <div class="form-text">
+                                        Enter 0 for a free event.
                                     </div>
                                 </div>
 
-
                                 <div class="col-md-6">
-                                    <label for="capacity" class="form-label">
-                                        Number of tickets available
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        class="form-control form-control-lg"
-                                        id="capacity"
-                                        min="1"
+                                    {{ render_field(
+                                        form.ticket_capacity,
+                                        min="1",
+                                        step="1",
                                         placeholder="e.g. 250"
-                                        required>
+                                    ) }}
                                 </div>
-
                             </div>
-
                         </section>
-
 
                         <!-- Image -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">05</span>
-
                                 <div>
                                     <h2>Event image</h2>
                                     <p>
-                                        Choose a strong image that represents the food experience.
+                                        Choose an image that represents
+                                        the food experience.
                                     </p>
                                 </div>
                             </div>
 
+                            {{ render_field(
+                                form.image,
+                                accept="image/png,image/jpeg"
+                            ) }}
 
-                            <label for="eventImage" class="upload-area">
-
-                                <i class="bi bi-cloud-arrow-up"></i>
-
-                                <strong>Upload event image</strong>
-
-                                <span>
-                                    JPG or PNG recommended
-                                </span>
-
-                                <input
-                                    type="file"
-                                    id="eventImage"
-                                    accept="image/png, image/jpeg">
-
-                            </label>
-
+                            <div class="form-text">
+                                Choose a JPG or PNG image up to 5 MB.
+                                If the form shows errors, select your
+                                image again before resubmitting.
+                            </div>
                         </section>
-
 
                         <!-- Acknowledgement of Country -->
                         <section class="form-card">
-
                             <div class="form-section-heading">
                                 <span class="form-step">06</span>
-
                                 <div>
                                     <h2>Acknowledgement of Country</h2>
                                     <p>
-                                        Select the statement option appropriate for your event.
+                                        Select the statement option
+                                        appropriate for your event.
                                     </p>
                                 </div>
                             </div>
 
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    {{ render_field(
+                                        form.acknowledgement_type,
+                                        css_class="form-select form-select-lg"
+                                    ) }}
 
-                            <div class="acknowledgement-options">
+                                    <div class="form-text">
+                                        None includes no statement.
+                                        Generic uses the standard statement.
+                                        Enhanced uses your researched,
+                                        personalised statement.
+                                    </div>
+                                </div>
 
-                                <label class="acknowledgement-card">
-                                    <input
-                                        type="radio"
-                                        name="acknowledgement"
-                                        value="none"
-                                        checked>
+                                <!-- Enhanced fields remain visible without JavaScript. -->
+                                <div class="col-12">
+                                    <h3 class="h5">
+                                        Enhanced acknowledgement details
+                                    </h3>
+                                    <p>
+                                        Complete the following three fields
+                                        when you choose Enhanced. They can
+                                        be left blank for None or Generic.
+                                    </p>
+                                </div>
 
-                                    <span>
-                                        <strong>No Acknowledgement of Country</strong>
-                                        <small>
-                                            No acknowledgement will be included in the event details.
-                                        </small>
-                                    </span>
-                                </label>
+                                <div class="col-12">
+                                    {{ render_field(
+                                        form.traditional_custodians
+                                    ) }}
+                                </div>
 
+                                <div class="col-12">
+                                    {{ render_field(
+                                        form.acknowledgement_source,
+                                        type="url",
+                                        placeholder="https://..."
+                                    ) }}
+                                </div>
 
-                                <label class="acknowledgement-card">
-                                    <input
-                                        type="radio"
-                                        name="acknowledgement"
-                                        value="generic">
-
-                                    <span>
-                                        <strong>Acknowledgement of Country: generic</strong>
-                                        <small>
-                                            Include the standard acknowledgement option.
-                                        </small>
-                                    </span>
-                                </label>
-
-
-                                <label class="acknowledgement-card">
-                                    <input
-                                        type="radio"
-                                        name="acknowledgement"
-                                        value="enhanced">
-
-                                    <span>
-                                        <strong>Acknowledgement of Country: enhanced</strong>
-                                        <small>
-                                            Include the enhanced acknowledgement option.
-                                        </small>
-                                    </span>
-                                </label>
-
+                                <div class="col-12">
+                                    {{ render_field(
+                                        form.acknowledgement_text,
+                                        rows=6
+                                    ) }}
+                                </div>
                             </div>
-
                         </section>
-
 
                         <!-- Actions -->
                         <div class="form-actions">
-
-                            <a href="{{ url_for('main.index') }}" class="btn btn-form-cancel btn-lg">
+                            <a href="{{ url_for('main.index') }}"
+                               class="btn btn-form-cancel btn-lg">
                                 Cancel
                             </a>
 
-                            <button type="submit" class="btn btn-nightbite btn-lg">
-                                Create Event
-                                <i class="bi bi-arrow-right ms-2"></i>
-                            </button>
-
+                            {{ form.submit(
+                                class="btn btn-nightbite btn-lg",
+                                value="Create Event"
+                            ) }}
                         </div>
-
-
                     </form>
-
                 </div>
-
             </div>
-
         </div>
-
     </main>
-
 
     <!-- Footer -->
     <footer class="nightbite-footer">
-
         <div class="container">
-
             <div class="row gy-4">
-
                 <div class="col-lg-5">
-
-                    <a class="nightbite-logo footer-logo" href="{{ url_for('main.index') }}">
+                    <a class="nightbite-logo footer-logo"
+                       href="{{ url_for('main.index') }}">
                         NIGHT<span>BITE</span>
                     </a>
 
@@ -547,51 +441,48 @@
                         Discover Brisbane's best food events,
                         markets and after-dark dining experiences.
                     </p>
-
                 </div>
 
                 <div class="col-6 col-lg-2 offset-lg-1">
-
                     <h3>Explore</h3>
-
                     <ul class="footer-links">
-                        <li><a href="{{ url_for('main.index') }}">Discover</a></li>
-                        <li><a href="{{ url_for('main.event') }}">Events</a></li>
-                        <li><a href="{{ url_for('main.bookings') }}">My Bookings</a></li>
+                        <li>
+                            <a href="{{ url_for('main.index') }}">
+                                Discover
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('main.event') }}">
+                                Events
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('main.bookings') }}">
+                                My Bookings
+                            </a>
+                        </li>
                     </ul>
-
                 </div>
 
                 <div class="col-6 col-lg-2">
-
                     <h3>Host</h3>
-
                     <ul class="footer-links">
-                        <li><a href="{{ url_for('main.create_event') }}">Create Event</a></li>
+                        <li>
+                            <a href="{{ url_for('main.create_event') }}">
+                                Create Event
+                            </a>
+                        </li>
                         <li><a href="#">Help Centre</a></li>
                     </ul>
-
                 </div>
-
             </div>
-
 
             <div class="footer-bottom">
-
                 <span>© 2026 NIGHTBITE</span>
-
                 <span>Brisbane, Queensland</span>
-
             </div>
-
         </div>
-
     </footer>
-
-
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-    </script>
 
 </body>
 </html>
