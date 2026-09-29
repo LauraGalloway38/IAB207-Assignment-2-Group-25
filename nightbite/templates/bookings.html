@@ -61,11 +61,22 @@
                         </a>
                     </li>
 
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="nav-link">{{ current_user.name }}</span>
+                    </li>
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <a class="btn btn-nightbite-outline" href="{{ url_for('auth.logout') }}">
+                            Sign Out
+                        </a>
+                    </li>
+                    {% else %}
                     <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
                         <a class="btn btn-nightbite-outline" href="{{ url_for('auth.login') }}">
                             Sign In
                         </a>
                     </li>
+                    {% endif %}
 
                 </ul>
 
@@ -93,6 +104,18 @@
     </header>
 
 
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <div class="alert alert-warning" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+
     <main class="bookings-page">
 
         <div class="container">
@@ -101,17 +124,17 @@
             <div class="booking-summary">
 
                 <div>
-                    <span class="summary-number">3</span>
+                    <span class="summary-number">{{ orders|length }}</span>
                     <span class="summary-label">Total bookings</span>
                 </div>
 
                 <div>
-                    <span class="summary-number">5</span>
+                    <span class="summary-number">{{ total_tickets }}</span>
                     <span class="summary-label">Tickets booked</span>
                 </div>
 
                 <div>
-                    <span class="summary-number">2</span>
+                    <span class="summary-number">{{ upcoming_count }}</span>
                     <span class="summary-label">Upcoming events</span>
                 </div>
 
@@ -134,280 +157,130 @@
             </div>
 
 
-            <!-- Booking 1 -->
-            <article class="booking-card">
+            {% if orders %}
+                {% for order in orders %}
+                    {% set event = order.event %}
+                    {% set status_class =
+                        'status-open' if event.status == 'Open'
+                        else 'status-sold' if event.status == 'Sold Out'
+                        else 'status-cancelled' if event.status == 'Cancelled'
+                        else 'status-inactive' %}
 
-                <div class="row g-0 align-items-stretch">
+                    <article class="booking-card">
 
-                    <div class="col-md-4 col-lg-3">
+                        <div class="row g-0 align-items-stretch">
 
-                        <img
-                            src="{{ url_for('static', filename='img/night-market.jpeg') }}"
-                            class="booking-image"
-                            alt="Riverside Night Bites">
+                            <div class="col-md-4 col-lg-3">
 
-                    </div>
-
-
-                    <div class="col-md-8 col-lg-9">
-
-                        <div class="booking-content">
-
-                            <div class="booking-top-row">
-
-                                <div>
-
-                                    <span class="status-badge-inline status-open">
-                                        Upcoming
-                                    </span>
-
-                                    <h3>Riverside Night Bites</h3>
-
-                                </div>
-
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
+                                <img
+                                    src="{{ url_for('static', filename=event.image_filename or 'img/night-market.jpeg') }}"
+                                    class="booking-image"
+                                    alt="{{ event.title }}">
 
                             </div>
 
 
-                            <div class="booking-details-grid">
+                            <div class="col-md-8 col-lg-9">
 
-                                <div class="booking-detail">
-                                    <i class="bi bi-receipt"></i>
+                                <div class="booking-content">
 
-                                    <div>
-                                        <span>Booking ID</span>
-                                        <strong>NB-10482</strong>
+                                    <div class="booking-top-row">
+
+                                        <div>
+
+                                            <span class="status-badge-inline {{ status_class }}">
+                                                {{ event.status }}
+                                            </span>
+
+                                            <h3>{{ event.title }}</h3>
+
+                                        </div>
+
+
+                                        <a href="{{ url_for('main.event', event_id=event.id) }}"
+                                           class="btn btn-event">
+                                            View Event
+                                        </a>
+
                                     </div>
-                                </div>
 
 
-                                <div class="booking-detail">
-                                    <i class="bi bi-ticket-perforated"></i>
+                                    <div class="booking-details-grid">
 
-                                    <div>
-                                        <span>Tickets</span>
-                                        <strong>2 tickets</strong>
+                                        <div class="booking-detail">
+                                            <i class="bi bi-receipt"></i>
+
+                                            <div>
+                                                <span>Order ID</span>
+                                                <strong>{{ order.order_reference }}</strong>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="booking-detail">
+                                            <i class="bi bi-ticket-perforated"></i>
+
+                                            <div>
+                                                <span>Tickets</span>
+                                                <strong>
+                                                    {{ order.quantity }}
+                                                    ticket{{ '' if order.quantity == 1 else 's' }}
+                                                </strong>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="booking-detail">
+                                            <i class="bi bi-calendar-check"></i>
+
+                                            <div>
+                                                <span>Event date</span>
+                                                <strong>{{ event.start_datetime.strftime('%d %b %Y') }}</strong>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="booking-detail">
+                                            <i class="bi bi-clock-history"></i>
+
+                                            <div>
+                                                <span>Booked</span>
+                                                <strong>
+                                                    {{ order.booking_datetime.strftime('%d %b %Y, %I:%M %p').lstrip('0') }}
+                                                </strong>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="booking-detail">
+                                            <i class="bi bi-cash-coin"></i>
+
+                                            <div>
+                                                <span>Total paid</span>
+                                                <strong>
+                                                    ${{ '%.2f'|format(order.total_amount) }}
+                                                    <small>(${{ '%.2f'|format(order.unit_price) }} each)</small>
+                                                </strong>
+                                            </div>
+                                        </div>
+
                                     </div>
-                                </div>
 
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-calendar-check"></i>
-
-                                    <div>
-                                        <span>Event date</span>
-                                        <strong>12 Sep 2026</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-clock-history"></i>
-
-                                    <div>
-                                        <span>Booked</span>
-                                        <strong>2 Sep 2026, 7:42 PM</strong>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </article>
-
-
-            <!-- Booking 2 -->
-            <article class="booking-card">
-
-                <div class="row g-0 align-items-stretch">
-
-                    <div class="col-md-4 col-lg-3">
-
-                        <img
-                            src="{{ url_for('static', filename='img/cultural-food.jpg') }}"
-                            class="booking-image"
-                            alt="Taste of Asia After Dark">
-
-                    </div>
-
-
-                    <div class="col-md-8 col-lg-9">
-
-                        <div class="booking-content">
-
-                            <div class="booking-top-row">
-
-                                <div>
-
-                                    <span class="status-badge-inline status-open">
-                                        Upcoming
-                                    </span>
-
-                                    <h3>Taste of Asia After Dark</h3>
-
-                                </div>
-
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-
-                            <div class="booking-details-grid">
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-receipt"></i>
-
-                                    <div>
-                                        <span>Booking ID</span>
-                                        <strong>NB-10341</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-ticket-perforated"></i>
-
-                                    <div>
-                                        <span>Tickets</span>
-                                        <strong>2 tickets</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-calendar-check"></i>
-
-                                    <div>
-                                        <span>Event date</span>
-                                        <strong>26 Sep 2026</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-clock-history"></i>
-
-                                    <div>
-                                        <span>Booked</span>
-                                        <strong>28 Aug 2026, 6:18 PM</strong>
-                                    </div>
                                 </div>
 
                             </div>
 
                         </div>
 
-                    </div>
-
+                    </article>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-secondary">
+                    You haven't made any bookings yet.
+                    <a href="{{ url_for('main.index') }}">Browse events</a>
+                    to get started.
                 </div>
-
-            </article>
-
-
-            <!-- Booking 3 -->
-            <article class="booking-card">
-
-                <div class="row g-0 align-items-stretch">
-
-                    <div class="col-md-4 col-lg-3">
-
-                        <img
-                            src="{{ url_for('static', filename='img/dessert.jpeg') }}"
-                            class="booking-image"
-                            alt="Midnight Dessert Club">
-
-                    </div>
-
-
-                    <div class="col-md-8 col-lg-9">
-
-                        <div class="booking-content">
-
-                            <div class="booking-top-row">
-
-                                <div>
-
-                                    <span class="status-badge-inline status-inactive">
-                                        Past Event
-                                    </span>
-
-                                    <h3>Midnight Dessert Club</h3>
-
-                                </div>
-
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-
-                            <div class="booking-details-grid">
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-receipt"></i>
-
-                                    <div>
-                                        <span>Booking ID</span>
-                                        <strong>NB-09716</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-ticket-perforated"></i>
-
-                                    <div>
-                                        <span>Tickets</span>
-                                        <strong>1 ticket</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-calendar-check"></i>
-
-                                    <div>
-                                        <span>Event date</span>
-                                        <strong>15 Aug 2026</strong>
-                                    </div>
-                                </div>
-
-
-                                <div class="booking-detail">
-                                    <i class="bi bi-clock-history"></i>
-
-                                    <div>
-                                        <span>Booked</span>
-                                        <strong>5 Aug 2026, 8:03 PM</strong>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </article>
+            {% endif %}
 
 
             <!-- Browse CTA -->
