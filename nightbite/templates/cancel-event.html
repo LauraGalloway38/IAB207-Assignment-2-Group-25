@@ -1,0 +1,15 @@
+{% extends "event-management-base.html" %}
+{% block title %}Cancel Event{% endblock %}
+{% block content %}
+<h1>Cancel event</h1>
+<p>Cancel <strong>{{ event_record.title }}</strong>? Existing bookings and comments will be retained. This action cannot be undone here.</p>
+<!-- Explicit confirmation with CSRF protection. -->
+<form method="post" action="{{ url_for('main.cancel_event', event_id=event_record.id) }}">
+    {{ form.hidden_tag() }}
+    {% for errors in form.errors.values() %}
+        {% for error in errors %}<p class="text-danger" role="alert">{{ error }}</p>{% endfor %}
+    {% endfor %}
+    {{ form.submit(class="btn btn-danger") }}
+    <a class="btn btn-outline-dark" href="{{ url_for('main.my_events') }}">Keep event / go back</a>
+</form>
+{% endblock %}

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Create Event | NIGHTBITE</title>
+    <title>{{ "Edit Event" if event_record else "Create Event" }} | NIGHTBITE</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -68,11 +68,12 @@
         </div>
     </nav>
 
+    <div class="container py-3"><a href="{{ url_for('main.my_events') }}">My Events</a></div>
     <!-- Page Header -->
     <header class="page-header">
         <div class="container">
             <p class="section-kicker">Host with NIGHTBITE</p>
-            <h1>Create an event</h1>
+            <h1>{{ "Edit event" if event_record else "Create an event" }}</h1>
             <p>
                 Share your food experience with Brisbane and give guests
                 everything they need to discover, plan and book.
@@ -133,7 +134,7 @@
                     <form
                         class="event-form"
                         method="post"
-                        action="{{ url_for('main.create_event') }}"
+                        action="{{ url_for('main.edit_event', event_id=event_record.id) if event_record else url_for('main.create_event') }}"
                         enctype="multipart/form-data"
                         novalidate>
 
@@ -203,7 +204,7 @@
 
                             <div class="row g-4">
                                 <div class="col-md-6">
-                                    {{ render_field(form.start_datetime) }}
+                                    {{ render_field(form.start_datetime) }}<div class="form-text">All event times currently use Brisbane time (AEST).</div>
                                 </div>
 
                                 <div class="col-md-6">
@@ -341,12 +342,14 @@
 
                             <div class="form-text">
                                 Choose a JPG or PNG image up to 5 MB.
+                                {% if event_record %}Leave blank to keep the current image.{% endif %}
                                 If the form shows errors, select your
                                 image again before resubmitting.
                             </div>
                         </section>
 
                         <!-- Acknowledgement of Country -->
+<p><a href="{{ url_for('main.acknowledgement_guide') }}" target="_blank" rel="noopener">Read the Acknowledgement of Country guide (opens a new tab)</a> for capital-city starting points, local research contacts and writing prompts.</p>
                         <section class="form-card">
                             <div class="form-section-heading">
                                 <span class="form-step">06</span>
@@ -418,7 +421,7 @@
 
                             {{ form.submit(
                                 class="btn btn-nightbite btn-lg",
-                                value="Create Event"
+                                value="Save Changes" if event_record else "Create Event"
                             ) }}
                         </div>
                     </form>

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from . import db
 from flask_login import UserMixin
 
@@ -89,13 +91,68 @@ class Event(db.Model):
         ),
     )
 
+    # Connect events to Jack's bookings and comments.
+    orders = db.relationship("Order", back_populates="event")
+    comments = db.relationship("Comment", back_populates="event")
+
+    @property
+    def tickets_sold(self):
+        return sum(order.quantity for order in self.orders)
+
+    @property
+    def remaining_tickets(self):
+        return max((self.ticket_capacity or 0) - self.tickets_sold, 0)
+
+    # NIGHTBITE currently interprets event times as Brisbane local time.
+    @property
+    def status(self):
+        if self.is_cancelled:
+            return "Cancelled"
+        brisbane_now = datetime.now(timezone(timedelta(hours=10))).replace(tzinfo=None)
+        if self.end_datetime and self.end_datetime <= brisbane_now:
+            return "Inactive"
+        if self.remaining_tickets <= 0:
+            return "Sold Out"
+        return "Open"
+
 
 class Comment(db.Model):
+    """Comment posted by a signed-in user on an event. Owned by Jack."""
+
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    comment_text = db.Column(db.Text, nullable=False)
+    posted_datetime = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    event = db.relationship('Event', back_populates='comments')
+
+    def __repr__(self):
+        return f'<Comment {self.id} on event {self.event_id}>'
 
 
 class Order(db.Model):
+    """A ticket order placed by a user against an event. Owned by Jack.
+
+    Aarnav's Event.remaining_tickets depends on Order.event_id and
+    Order.quantity, so those two names must not change.
+    """
+
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    booking_datetime = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    order_reference = db.Column(db.String(20), unique=True, nullable=False)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    event = db.relationship('Event', back_populates='orders')
+
+    def __repr__(self):
+        return f'<Order {self.order_reference}>'
 
 
 # From A2 starter files

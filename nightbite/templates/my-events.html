@@ -1,0 +1,33 @@
+{% extends "event-management-base.html" %}
+{% block content %}
+<h1>My Events</h1>
+<p>Manage the events you have created. Times are shown in Brisbane time (AEST).</p>
+<a class="btn btn-nightbite mb-4" href="{{ url_for('main.create_event') }}">Create an event</a>
+<!-- Show each creator's saved events and calculated availability. -->
+<div class="row g-4">
+{% for event in events %}
+    <div class="col-md-6">
+        <article class="card h-100">
+            <img src="{{ url_for('static', filename=event.image_filename) }}" alt="{{ event.title }}" class="card-img-top" style="height:220px;object-fit:cover">
+            <div class="card-body">
+                <h2 class="h4">{{ event.title }}</h2>
+                <p><span class="badge bg-dark">{{ event.status }}</span></p>
+                <p>{{ event.start_datetime.strftime('%d %b %Y, %I:%M %p') }}<br>{{ event.venue }}, {{ event.suburb }}</p>
+                <p>${{ '%.2f'|format(event.ticket_price) }} AUD · {{ event.remaining_tickets }} of {{ event.ticket_capacity }} tickets remaining</p>
+                <p>{{ event.description }}</p>
+                {% if event.acknowledgement_type != 'none' %}
+                    <h3 class="h6">Acknowledgement of Country</h3>
+                    <p style="white-space:pre-wrap">{{ event.acknowledgement_text }}</p>
+                {% endif %}
+                <a class="btn btn-outline-dark" href="{{ url_for('main.edit_event', event_id=event.id) }}">Edit</a>
+                {% if not event.is_cancelled %}
+                    <a class="btn btn-outline-danger" href="{{ url_for('main.cancel_event', event_id=event.id) }}">Cancel event</a>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+{% else %}
+    <p>You have not created any events yet.</p>
+{% endfor %}
+</div>
+{% endblock %}
