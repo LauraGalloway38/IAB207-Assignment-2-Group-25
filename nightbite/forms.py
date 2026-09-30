@@ -1,21 +1,49 @@
 from flask_wtf import FlaskForm
-from wtforms.fields import TextAreaField, SubmitField, StringField, PasswordField
-from wtforms.validators import InputRequired, Length, Email, EqualTo
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp
 
-# creates the login information
+
+def strip_text(value):
+    return value.strip() if value else value
+
+
+def normalise_email(value):
+    return value.strip().lower() if value else value
+
+
 class LoginForm(FlaskForm):
-    user_name=StringField("User Name", validators=[InputRequired('Enter user name')])
-    password=PasswordField("Password", validators=[InputRequired('Enter user password')])
-    submit = SubmitField("Login")
+    email = StringField('Email address', filters=[normalise_email],
+                        validators=[DataRequired(), Email(), Length(max=254)],
+                        render_kw={'autocomplete': 'email', 'type': 'email'})
+    password = PasswordField('Password', validators=[DataRequired()],
+                             render_kw={'autocomplete': 'current-password'})
+    submit = SubmitField('Sign in')
 
- # this is the registration form
+
 class RegisterForm(FlaskForm):
-    user_name=StringField("User Name", validators=[InputRequired()])
-    email = StringField("Email Address", validators=[Email("Please enter a valid email")])
-    # linking two fields - password should be equal to data entered in confirm
-    password=PasswordField("Password", validators=[InputRequired(),
-                  EqualTo('confirm', message="Passwords should match")])
-    confirm = PasswordField("Confirm Password")
+    name = StringField('Full name', filters=[strip_text],
+                       validators=[DataRequired(), Length(max=100)],
+                       render_kw={'autocomplete': 'name'})
+    email = StringField('Email address', filters=[normalise_email],
+                        validators=[DataRequired(), Email(), Length(max=254)],
+                        render_kw={'autocomplete': 'email', 'type': 'email'})
+    contact_number = StringField('Contact number', filters=[strip_text], validators=[
+        DataRequired(), Length(min=6, max=30),
+        Regexp(r'(?=(?:\D*\d){6})[+0-9() .-]+$',
+               message='Enter a valid contact number with at least six digits.')],
+        render_kw={'autocomplete': 'tel', 'type': 'tel'})
+    street_address = StringField('Street address', filters=[strip_text],
+                                 validators=[DataRequired(), Length(max=255)],
+                                 render_kw={'autocomplete': 'street-address'})
+    password = PasswordField('Password', validators=[
+        DataRequired(), Length(min=8, max=128),
+        EqualTo('confirm', message='Passwords must match.')],
+        description='Use at least 8 characters.',
+        render_kw={'autocomplete': 'new-password'})
+    confirm = PasswordField('Confirm password', validators=[DataRequired()],
+                            render_kw={'autocomplete': 'new-password'})
+    submit = SubmitField('Create account')
 
-    # submit button
-    submit = SubmitField("Register")
+
+class LogoutForm(FlaskForm):
+    submit = SubmitField('Sign out')

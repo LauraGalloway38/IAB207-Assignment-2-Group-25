@@ -1,0 +1,29 @@
+<nav class="navbar navbar-expand-lg navbar-dark nightbite-navbar sticky-top" aria-label="Main navigation">
+    <div class="container">
+        <a class="navbar-brand nightbite-logo" href="{{ url_for('main.index') }}">NIGHT<span>BITE</span></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainNavigation" aria-controls="mainNavigation"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavigation">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                <li class="nav-item"><a class="nav-link{% if request.endpoint == 'main.index' %} active{% endif %}" href="{{ url_for('main.index') }}">Discover</a></li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link{% if request.endpoint == 'main.create_event' %} active{% endif %}" href="{{ url_for('main.create_event') }}">Create Event</a></li>
+                <li class="nav-item"><a class="nav-link{% if request.endpoint == 'main.bookings' %} active{% endif %}" href="{{ url_for('main.bookings') }}">My Bookings</a></li>
+                <li class="nav-item"><span class="navbar-text">Hi, {{ current_user.name }}</span></li>
+                <li class="nav-item">
+                    <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
+                        {{ logout_form.hidden_tag() }}
+                        <button class="btn btn-nightbite-outline" type="submit">Sign out</button>
+                    </form>
+                </li>
+                {% else %}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Create account</a></li>
+                <li class="nav-item"><a class="btn btn-nightbite-outline" href="{{ url_for('auth.login') }}">Sign in</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
