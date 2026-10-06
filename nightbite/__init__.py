@@ -17,7 +17,9 @@ csrf = CSRFProtect()
 def create_app(test_config=None):
     app = Flask(__name__)
     app.config.from_mapping(
-        SQLALCHEMY_DATABASE_URI='sqlite:///sitedata.sqlite',
+        SQLALCHEMY_DATABASE_URI=os.environ.get('NIGHTBITE_DATABASE_URI') or (
+            'sqlite:///' + (Path(app.root_path) / 'sitedata.sqlite').as_posix()
+        ),
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
         SESSION_COOKIE_SECURE=os.environ.get('NIGHTBITE_HTTPS') == '1',
@@ -87,6 +89,11 @@ def create_app(test_config=None):
     def init_db():
         """Create missing tables without deleting existing records."""
         db.create_all()
-        click.echo('Database tables created.')
+        from .models import Category
+        for name in ['Night Markets', 'Street Food', 'Pop-Ups', 'Cultural Food', 'Dessert', 'Food Trucks']:
+            if db.session.scalar(db.select(Category).where(Category.name == name)) is None:
+                db.session.add(Category(name=name))
+        db.session.commit()
+        click.echo('Database tables and event categories ready.')
 
     return app

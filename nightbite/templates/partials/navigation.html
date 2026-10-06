@@ -12,6 +12,7 @@
                 {% if current_user.is_authenticated %}
                 <li class="nav-item"><a class="nav-link{% if request.endpoint == 'main.create_event' %} active{% endif %}" href="{{ url_for('main.create_event') }}">Create Event</a></li>
                 <li class="nav-item"><a class="nav-link{% if request.endpoint == 'main.bookings' %} active{% endif %}" href="{{ url_for('main.bookings') }}">My Bookings</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('main.my_events') }}">My Events</a></li>
                 <li class="nav-item"><span class="navbar-text">Hi, {{ current_user.name }}</span></li>
                 <li class="nav-item">
                     <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
