@@ -164,6 +164,7 @@ def create_event():
 
 
 @main_bp.route('/bookings')
+@login_required
 def bookings():
     return render_template('bookings.html')
 

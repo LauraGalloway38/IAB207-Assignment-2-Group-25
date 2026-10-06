@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} | NIGHTBITE{% endblock %}
+{% block content %}
+<main class="container py-5 text-center">
+    <p class="display-3 fw-bold">{{ code }}</p>
+    <h1>{{ heading }}</h1>
+    <p>{{ message }}</p>
+    <a class="btn btn-dark" href="{{ url_for('main.index') }}">Back to Discover</a>
+</main>
+{% endblock %}

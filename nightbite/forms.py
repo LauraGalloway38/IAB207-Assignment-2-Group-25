@@ -1,77 +1,60 @@
 from decimal import Decimal
+from flask_wtf.file import FileAllowed, FileField
+from wtforms import BooleanField, DateTimeLocalField, DecimalField, IntegerField, SelectField, TextAreaField
+from wtforms.validators import InputRequired, NumberRange, Optional, URL, ValidationError
 
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
-from wtforms import (
-    BooleanField,
-    DateTimeLocalField,
-    DecimalField,
-    IntegerField,
-    PasswordField,
-    SelectField,
-    StringField,
-    SubmitField,
-    TextAreaField,
-)
-from wtforms.validators import (
-    DataRequired,
-    Email,
-    EqualTo,
-    InputRequired,
-    Length,
-    NumberRange,
-    Optional,
-    URL,
-    ValidationError,
-)
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp
 
 
-# creates the login information
-class LoginForm(FlaskForm):
-    user_name = StringField(
-        "User Name",
-        validators=[InputRequired("Enter user name")],
-    )
-    password = PasswordField(
-        "Password",
-        validators=[InputRequired("Enter user password")],
-    )
-    submit = SubmitField("Login")
-
-
-# this is the registration form
-class RegisterForm(FlaskForm):
-    user_name = StringField(
-        "User Name",
-        validators=[InputRequired()],
-    )
-    email = StringField(
-        "Email Address",
-        validators=[Email("Please enter a valid email")],
-    )
-
-    # linking two fields - password should be equal to data entered in confirm
-    password = PasswordField(
-        "Password",
-        validators=[
-            InputRequired(),
-            EqualTo("confirm", message="Passwords should match"),
-        ],
-    )
-    confirm = PasswordField("Confirm Password")
-
-    # submit button
-    submit = SubmitField("Register")
-
-
-# Event management forms - Aarnav's section
-
-# Remove extra spaces around text entered in event fields.
 def strip_text(value):
-    return value.strip() if isinstance(value, str) else value
+    return value.strip() if value else value
 
 
-# Shared form for creating and editing events.
+def normalise_email(value):
+    return value.strip().lower() if value else value
+
+
+class LoginForm(FlaskForm):
+    email = StringField('Email address', filters=[normalise_email],
+                        validators=[DataRequired(), Email(), Length(max=254)],
+                        render_kw={'autocomplete': 'email', 'type': 'email'})
+    password = PasswordField('Password', validators=[DataRequired()],
+                             render_kw={'autocomplete': 'current-password'})
+    submit = SubmitField('Sign in')
+
+
+class RegisterForm(FlaskForm):
+    name = StringField('Full name', filters=[strip_text],
+                       validators=[DataRequired(), Length(max=100)],
+                       render_kw={'autocomplete': 'name'})
+    email = StringField('Email address', filters=[normalise_email],
+                        validators=[DataRequired(), Email(), Length(max=254)],
+                        render_kw={'autocomplete': 'email', 'type': 'email'})
+    contact_number = StringField('Contact number', filters=[strip_text], validators=[
+        DataRequired(), Length(min=6, max=30),
+        Regexp(r'(?=(?:\D*\d){6})[+0-9() .-]+$',
+               message='Enter a valid contact number with at least six digits.')],
+        render_kw={'autocomplete': 'tel', 'type': 'tel'})
+    street_address = StringField('Street address', filters=[strip_text],
+                                 validators=[DataRequired(), Length(max=255)],
+                                 render_kw={'autocomplete': 'street-address'})
+    password = PasswordField('Password', validators=[
+        DataRequired(), Length(min=8, max=128),
+        EqualTo('confirm', message='Passwords must match.')],
+        description='Use at least 8 characters.',
+        render_kw={'autocomplete': 'new-password'})
+    confirm = PasswordField('Confirm password', validators=[DataRequired()],
+                            render_kw={'autocomplete': 'new-password'})
+    submit = SubmitField('Create account')
+
+
+class LogoutForm(FlaskForm):
+    submit = SubmitField('Sign out')
+
+
+# Event management forms - Aarnav
 class EventForm(FlaskForm):
     # Basic event information
     title = StringField(

@@ -1,24 +1,21 @@
-{% extends "base.html" %}
-{% from "bootstrap5/form.html" import render_form %}
-
+{% extends 'base.html' %}
+{% from 'bootstrap5/form.html' import render_form %}
+{% block title %}{{ heading }} | NIGHTBITE{% endblock %}
 {% block content %}
-
-<div class="container py-4">
-    <div class="page-header">
-        <h4>{{ heading }}</h4>
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <section class="bg-white border rounded-4 p-4 p-md-5 shadow-sm" aria-labelledby="account-heading">
+                <h1 id="account-heading" class="h2">{{ heading }}</h1>
+                <p class="text-muted">Your next Brisbane food experience starts here.</p>
+                {{ render_form(form, button_style='dark') }}
+                {% if heading == 'Sign in' %}
+                <p class="mt-4 mb-0">New to NIGHTBITE? <a href="{{ url_for('auth.register') }}">Create an account</a>.</p>
+                {% else %}
+                <p class="mt-4 mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>.</p>
+                {% endif %}
+            </section>
+        </div>
     </div>
-
-    <!-- Form rendering is simple and easy if using WTForms and Bootstrap -->
-    <div class="col-md-6">
-        {{ render_form(form) }}
-    </div>
-
-    <!-- When you have Login form, then show the user a link to register -->
-    {% if heading == 'Login' %}
-    <div class="col-md-4">
-        <p>Registration is not available yet.</p>
-    </div>
-    {% endif %}
-</div>
-
+</main>
 {% endblock %}
