@@ -1,420 +1,799 @@
 {% extends "base.html" %}
-{% block title %}Riverside Night Bites | NIGHTBITE{% endblock %}
+
+{% block title %}{{ event.title }} | NIGHTBITE{% endblock %}
+
 {% block content %}
+
 <!-- Event Hero -->
-    <header class="event-detail-hero">
+<header class="event-detail-hero">
 
-        <div class="container">
+    <div class="container">
 
-            <a href="{{ url_for('main.index') }}" class="back-link">
-                <i class="bi bi-arrow-left"></i>
-                Back to events
-            </a>
+        <a href="{{ url_for('main.index') }}#events" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Back to events
+        </a>
 
-            <div class="event-detail-image-wrapper">
+        <div class="event-detail-image-wrapper">
 
-                <img
-                    src="{{ url_for('static', filename='img/night-market.jpeg') }}"
-                    alt="Riverside Night Bites night market"
-                    class="event-detail-image">
+            <img
+                src="{{ url_for('static', filename=event.image_filename) }}"
+                alt="{{ event.title }}"
+                class="event-detail-image">
 
-                <span class="event-detail-status status-open">
-                    Open
-                </span>
-
-            </div>
+            <span class="event-detail-status
+                {% if event.status == 'Open' %}
+                    status-open
+                {% elif event.status == 'Sold Out' %}
+                    status-sold
+                {% elif event.status == 'Cancelled' %}
+                    status-cancelled
+                {% else %}
+                    status-inactive
+                {% endif %}">
+                {{ event.status }}
+            </span>
 
         </div>
 
-    </header>
+    </div>
+
+</header>
 
 
-    <!-- Event Content -->
-    <main class="event-detail-page">
+<!-- Event Content -->
+<main class="event-detail-page">
 
-        <div class="container">
+    <div class="container">
 
-            <div class="row g-5">
+        <div class="row g-5">
 
-                <!-- Left Column -->
-                <div class="col-lg-8">
+            <!-- Left Column -->
+            <div class="col-lg-8">
 
-                    <!-- Event Heading -->
-                    <section class="event-detail-heading">
+                <!-- Event Heading -->
+                <section class="event-detail-heading">
 
-                        <span class="event-category">
-                            Night Market
-                        </span>
+                    <span class="event-category">
+                        {{ event.category.name }}
+                    </span>
 
-                        <h1>Riverside Night Bites</h1>
+                    <h1>{{ event.title }}</h1>
 
-                        <p class="event-detail-intro">
-                            Spend the evening by the river with some of Brisbane's
-                            best street-food vendors, local desserts and live
-                            entertainment in the heart of South Brisbane.
+                    <p class="event-detail-intro">
+                        {{ event.description }}
+                    </p>
+
+                </section>
+
+
+                <!-- Quick Information -->
+                <section class="event-info-grid">
+
+                    <div class="event-info-item">
+
+                        <i class="bi bi-calendar3"></i>
+
+                        <div>
+                            <span>Date</span>
+
+                            <strong>
+                                {{ event.start_datetime.strftime('%A, %d %B %Y') }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="event-info-item">
+
+                        <i class="bi bi-clock"></i>
+
+                        <div>
+                            <span>Time</span>
+
+                            <strong>
+                                {{ event.start_datetime.strftime('%#I:%M %p') }}
+                                -
+                                {{ event.end_datetime.strftime('%#I:%M %p') }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="event-info-item">
+
+                        <i class="bi bi-geo-alt"></i>
+
+                        <div>
+                            <span>Location</span>
+
+                            <strong>
+                                {{ event.venue }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="event-info-item">
+
+                        <i class="bi bi-signpost-2"></i>
+
+                        <div>
+                            <span>Suburb</span>
+
+                            <strong>
+                                {{ event.suburb }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- About -->
+                <section class="event-content-section">
+
+                    <p class="section-kicker">
+                        About the event
+                    </p>
+
+                    <h2>
+                        About {{ event.title }}
+                    </h2>
+
+                    <p>
+                        {{ event.description }}
+                    </p>
+
+                    <p>
+                        This event takes place at
+                        <strong>{{ event.venue }}</strong>
+                        in {{ event.suburb }}, {{ event.state }}.
+                    </p>
+
+                    {% if event.street_address %}
+
+                        <p>
+                            <strong>Address:</strong>
+                            {{ event.street_address }},
+                            {{ event.suburb }},
+                            {{ event.state }}
                         </p>
 
-                    </section>
+                    {% endif %}
+
+                </section>
 
 
-                    <!-- Quick Information -->
-                    <section class="event-info-grid">
+                <!-- Food and Guest Details -->
+                <section class="event-content-section">
 
-                        <div class="event-info-item">
-                            <i class="bi bi-calendar3"></i>
+                    <p class="section-kicker">
+                        Before you go
+                    </p>
+
+                    <h2>
+                        Food and guest information
+                    </h2>
+
+
+                    <div class="event-feature-grid">
+
+                        <!-- Cuisine -->
+                        <div class="event-feature">
+
+                            <i class="bi bi-fire"></i>
 
                             <div>
-                                <span>Date</span>
-                                <strong>Saturday, 12 September 2026</strong>
+
+                                <span>
+                                    Cuisine
+                                </span>
+
+                                <strong>
+                                    {{ event.cuisine or 'Not specified' }}
+                                </strong>
+
                             </div>
+
                         </div>
 
 
-                        <div class="event-info-item">
-                            <i class="bi bi-clock"></i>
+                        <!-- Dietary -->
+                        <div class="event-feature">
+
+                            <i class="bi bi-leaf"></i>
 
                             <div>
-                                <span>Time</span>
-                                <strong>5:00 PM - 10:30 PM</strong>
+
+                                <span>
+                                    Dietary options
+                                </span>
+
+                                <strong>
+
+                                    {% set dietary = [] %}
+
+                                    {% if event.vegetarian %}
+                                        {% set _ = dietary.append('Vegetarian') %}
+                                    {% endif %}
+
+                                    {% if event.vegan %}
+                                        {% set _ = dietary.append('Vegan') %}
+                                    {% endif %}
+
+                                    {% if event.gluten_free %}
+                                        {% set _ = dietary.append('Gluten-free') %}
+                                    {% endif %}
+
+                                    {% if event.halal %}
+                                        {% set _ = dietary.append('Halal') %}
+                                    {% endif %}
+
+                                    {% if dietary %}
+                                        {{ dietary | join(', ') }}
+                                    {% else %}
+                                        No specific dietary options listed
+                                    {% endif %}
+
+                                </strong>
+
                             </div>
+
                         </div>
 
 
-                        <div class="event-info-item">
+                        <!-- Accessibility -->
+                        <div class="event-feature">
+
+                            <i class="bi bi-universal-access-circle"></i>
+
+                            <div>
+
+                                <span>
+                                    Accessibility
+                                </span>
+
+                                <strong>
+                                    {{ event.accessibility or
+                                       'Contact the organiser for accessibility information.' }}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Venue -->
+                        <div class="event-feature">
+
                             <i class="bi bi-geo-alt"></i>
 
                             <div>
-                                <span>Location</span>
-                                <strong>South Bank Cultural Forecourt</strong>
+
+                                <span>
+                                    Venue
+                                </span>
+
+                                <strong>
+                                    {{ event.venue }}, {{ event.suburb }}
+                                </strong>
+
                             </div>
+
                         </div>
 
+                    </div>
 
-                        <div class="event-info-item">
-                            <i class="bi bi-signpost-2"></i>
-
-                            <div>
-                                <span>Suburb</span>
-                                <strong>South Brisbane</strong>
-                            </div>
-                        </div>
-
-                    </section>
+                </section>
 
 
-                    <!-- About -->
-                    <section class="event-content-section">
+                <!-- Acknowledgement -->
+                <section class="acknowledgement-display">
+
+                    <div class="acknowledgement-icon">
+
+                        <i class="bi bi-tree"></i>
+
+                    </div>
+
+
+                    <div>
 
                         <p class="section-kicker">
-                            About the event
+                            Acknowledgement of Country
                         </p>
 
-                        <h2>An evening built around Brisbane food</h2>
+                        <h2>
+                            Respecting Country
+                        </h2>
 
                         <p>
-                            Riverside Night Bites brings together a curated
-                            selection of local food stalls, street-food vendors
-                            and dessert makers for an after-dark dining
-                            experience along the Brisbane River.
-                        </p>
-
-                        <p>
-                            Guests can explore a range of cuisines throughout the
-                            evening, with vendors serving dishes inspired by
-                            Asian, Mediterranean, Australian and Latin American
-                            street food. The event also includes live acoustic
-                            entertainment, communal seating and riverfront
-                            dining areas.
-                        </p>
-
-                        <p>
-                            Entry tickets provide access to the event precinct.
-                            Food and beverages are purchased directly from
-                            individual vendors unless otherwise stated.
-                        </p>
-
-                    </section>
-
-
-                    <!-- Food and Guest Details -->
-                    <section class="event-content-section">
-
-                        <p class="section-kicker">
-                            Before you go
-                        </p>
-
-                        <h2>Food and guest information</h2>
-
-                        <div class="event-feature-grid">
-
-                            <div class="event-feature">
-                                <i class="bi bi-fire"></i>
-
-                                <div>
-                                    <span>Cuisine</span>
-                                    <strong>International street food</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="event-feature">
-                                <i class="bi bi-leaf"></i>
-
-                                <div>
-                                    <span>Dietary options</span>
-                                    <strong>
-                                        Vegetarian, Vegan, Gluten-free
-                                    </strong>
-                                </div>
-                            </div>
-
-
-                            <div class="event-feature">
-                                <i class="bi bi-universal-access-circle"></i>
-
-                                <div>
-                                    <span>Accessibility</span>
-                                    <strong>
-                                        Step-free venue access and accessible facilities
-                                    </strong>
-                                </div>
-                            </div>
-
-
-                            <div class="event-feature">
-                                <i class="bi bi-cloud-moon"></i>
-
-                                <div>
-                                    <span>Setting</span>
-                                    <strong>
-                                        Outdoor riverfront event
-                                    </strong>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- Acknowledgement -->
-                    <section class="acknowledgement-display">
-
-                        <div class="acknowledgement-icon">
-                            <i class="bi bi-tree"></i>
-                        </div>
-
-                        <div>
-                            <p class="section-kicker">
-                                Acknowledgement of Country
-                            </p>
-
-                            <h2>Respecting Country</h2>
-
-                            <p>
+                            {% if event.acknowledgement_text %}
+                                {{ event.acknowledgement_text }}
+                            {% else %}
                                 NIGHTBITE acknowledges the Traditional Custodians
                                 of the land on which this event takes place and
                                 pays respect to Elders past and present.
-                            </p>
-                        </div>
+                            {% endif %}
+                        </p>
 
-                    </section>
+                    </div>
+
+                </section>
 
 
-                    <!-- Comments -->
-                    <section class="comments-section">
+                <!-- AI Related Event Recommendations -->
+                {% if recommendations %}
 
-                        <div class="comments-heading">
+                <section class="recommendations-section py-5">
+
+                    <div class="container">
+
+                        <!-- Section Heading -->
+                        <div class="section-heading mb-4">
 
                             <div>
                                 <p class="section-kicker">
-                                    Community
+                                    Smart discovery
                                 </p>
 
-                                <h2>Event comments</h2>
-                            </div>
+                                <h2>
+                                    You might also like
+                                </h2>
 
-                            <span class="comment-count">
-                                3 comments
-                            </span>
+                                <p class="section-description mb-0">
+                                    Recommended based on this event's food,
+                                    location and experience.
+                                </p>
+                            </div>
 
                         </div>
 
 
-                        <!-- Comment 1 -->
-                        <article class="comment-card">
+                        <!-- Recommendation Cards -->
+                        <div class="row g-4" id="recommendationGrid">
 
-                            <div class="comment-avatar">
-                                JL
-                            </div>
+                            {% for recommendation in recommendations %}
 
-                            <div class="comment-body">
+                                {% set recommended_event = recommendation.event %}
 
-                                <div class="comment-meta">
+                                <div class="col-md-6 col-xl-3 recommendation-item
+                                            {% if loop.index > 4 %}d-none extra-recommendation{% endif %}">
 
-                                    <strong>Jordan Lee</strong>
+                                    <article class="event-card recommendation-card h-100">
 
-                                    <span>
-                                        3 September 2026
-                                    </span>
+                                        <!-- Image -->
+                                        <div class="event-image-wrapper">
+
+                                            <img
+                                                src="{{ url_for(
+                                                    'static',
+                                                    filename=recommended_event.image_filename
+                                                ) }}"
+                                                class="event-image"
+                                                alt="{{ recommended_event.title }}">
+
+                                            <!-- Status -->
+                                            <span class="status-badge
+
+                                                {% if recommended_event.status == 'Open' %}
+                                                    status-open
+
+                                                {% elif recommended_event.status == 'Sold Out' %}
+                                                    status-sold
+
+                                                {% elif recommended_event.status == 'Cancelled' %}
+                                                    status-cancelled
+
+                                                {% else %}
+                                                    status-inactive
+                                                {% endif %}">
+
+                                                {{ recommended_event.status }}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- Card Body -->
+                                        <div class="event-card-body">
+
+                                            <span class="event-category">
+                                                {{ recommended_event.category.name }}
+                                            </span>
+
+                                            <h3>
+                                                {{ recommended_event.title }}
+                                            </h3>
+
+
+                                            <!-- Event Details -->
+                                            <div class="event-meta">
+
+                                                <p>
+                                                    <i class="bi bi-calendar3"></i>
+
+                                                    {{ recommended_event.start_datetime.strftime(
+                                                        '%a %d %b · %#I:%M %p'
+                                                    ) }}
+                                                </p>
+
+                                                <p>
+                                                    <i class="bi bi-geo-alt"></i>
+
+                                                    {{ recommended_event.suburb }}
+                                                </p>
+
+                                            </div>
+
+
+                                                <!-- Recommendation Reason -->
+                                                {% if recommendation.reasons %}
+
+                                                    <div class="recommendation-reason">
+
+                                                        <i class="bi bi-stars"></i>
+
+                                                        <span>
+                                                            {{ recommendation.reasons[:2] | join(' · ') }}
+                                                        </span>
+
+                                                    </div>
+
+                                                {% endif %}
+
+
+                                            <!-- Footer -->
+                                            <div class="event-card-footer">
+
+                                                <div>
+
+                                                    {% if recommended_event.ticket_price == 0 %}
+
+                                                        <span class="price-label">
+                                                            Entry
+                                                        </span>
+
+                                                        <strong>
+                                                            Free
+                                                        </strong>
+
+                                                    {% else %}
+
+                                                        <span class="price-label">
+                                                            From
+                                                        </span>
+
+                                                        <strong>
+                                                            ${{ '%.2f'|format(
+                                                                recommended_event.ticket_price
+                                                            ) }}
+                                                        </strong>
+
+                                                    {% endif %}
+
+                                                </div>
+
+
+                                                <a href="{{ url_for(
+                                                            'main.event',
+                                                            event_id=recommended_event.id
+                                                        ) }}"
+                                                class="btn btn-event">
+
+                                                    View
+
+                                                    <i class="bi bi-arrow-right"></i>
+
+                                                </a>
+                                               
+                                            </div>
+
+                                        </div>
+
+                                    </article>
 
                                 </div>
 
-                                <p>
-                                    Does anyone know if there will be plenty of
-                                    vegan options this year?
-                                </p>
+                            {% endfor %}
+
+                        </div>
+
+
+                        <!-- View All Recommendations -->
+                        {% if recommendations|length > 4 %}
+
+                            <div class="text-center mt-4">
+
+                                <button
+                                    type="button"
+                                    id="viewAllRecommendations"
+                                    class="btn btn-nightbite">
+
+                                    View All Recommendations
+
+                                    <i class="bi bi-chevron-down ms-2"></i>
+
+                                </button>
 
                             </div>
 
-                        </article>
+                        {% endif %}
+
+                    </div>
+
+                </section>
+
+                {% endif %}
 
 
-                        <!-- Comment 2 -->
-                        <article class="comment-card">
-
-                            <div class="comment-avatar">
-                                SM
-                            </div>
-
-                            <div class="comment-body">
-
-                                <div class="comment-meta">
-
-                                    <strong>Sophie Martin</strong>
-
-                                    <span>
-                                        3 September 2026
-                                    </span>
-
-                                </div>
-
-                                <p>
-                                    Went last year and loved it. The riverside
-                                    setup was great and there were lots of
-                                    different food stalls.
-                                </p>
-
-                            </div>
-
-                        </article>
 
 
-                        <!-- Comment 3 -->
-                        <article class="comment-card">
+                <!-- Comments -->
+                <section class="comments-section">
 
-                            <div class="comment-avatar">
-                                AC
-                            </div>
+                    <div class="comments-heading">
 
-                            <div class="comment-body">
+                        <div>
 
-                                <div class="comment-meta">
-
-                                    <strong>Alex Chen</strong>
-
-                                    <span>
-                                        4 September 2026
-                                    </span>
-
-                                </div>
-
-                                <p>
-                                    Looking forward to the dessert vendors.
-                                    See you there!
-                                </p>
-
-                            </div>
-
-                        </article>
-
-
-                        <!-- Comment Form -->
-                        <div class="comment-form-card">
-
-                            <h3>Join the conversation</h3>
-
-                            <p>
-                                Signed-in users can ask questions or share
-                                information about the event.
+                            <p class="section-kicker">
+                                Community
                             </p>
 
-                            <form>
-
-                                <label for="commentText" class="form-label">
-                                    Your comment
-                                </label>
-
-                                <textarea
-                                    class="form-control"
-                                    id="commentText"
-                                    rows="4"
-                                    placeholder="Write a comment..."
-                                    required></textarea>
-
-                                <div class="comment-form-actions">
-
-                                    <span>
-                                        <i class="bi bi-person-circle"></i>
-                                        Posting as Taylor Morgan
-                                    </span>
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-nightbite">
-
-                                        Post Comment
-
-                                        <i class="bi bi-send ms-2"></i>
-
-                                    </button>
-
-                                </div>
-
-                            </form>
+                            <h2>
+                                Event comments
+                            </h2>
 
                         </div>
 
-                    </section>
+                        <span class="comment-count">
+                            3 comments
+                        </span>
 
-                </div>
+                    </div>
 
 
-                <!-- Booking Column -->
-                <div class="col-lg-4">
+                    <!-- Comment 1 -->
+                    <article class="comment-card">
 
-                    <aside class="booking-panel">
-
-                        <div class="booking-panel-header">
-
-                            <span class="price-label">
-                                Tickets from
-                            </span>
-
-                            <div class="booking-price">
-                                $12
-                                <small>per person</small>
-                            </div>
-
+                        <div class="comment-avatar">
+                            JL
                         </div>
 
+                        <div class="comment-body">
 
-                        <div class="availability-box">
+                            <div class="comment-meta">
 
-                            <div>
-                                <i class="bi bi-ticket-perforated"></i>
+                                <strong>
+                                    Jordan Lee
+                                </strong>
 
                                 <span>
-                                    Tickets available
+                                    3 September 2026
                                 </span>
+
                             </div>
 
-                            <strong>
-                                46 remaining
-                            </strong>
+                            <p>
+                                Does anyone know if there will be plenty of
+                                vegan options this year?
+                            </p>
 
                         </div>
 
+                    </article>
+
+
+                    <!-- Comment 2 -->
+                    <article class="comment-card">
+
+                        <div class="comment-avatar">
+                            SM
+                        </div>
+
+                        <div class="comment-body">
+
+                            <div class="comment-meta">
+
+                                <strong>
+                                    Sophie Martin
+                                </strong>
+
+                                <span>
+                                    3 September 2026
+                                </span>
+
+                            </div>
+
+                            <p>
+                                Went last year and loved it. The riverside
+                                setup was great and there were lots of
+                                different food stalls.
+                            </p>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- Comment 3 -->
+                    <article class="comment-card">
+
+                        <div class="comment-avatar">
+                            AC
+                        </div>
+
+                        <div class="comment-body">
+
+                            <div class="comment-meta">
+
+                                <strong>
+                                    Alex Chen
+                                </strong>
+
+                                <span>
+                                    4 September 2026
+                                </span>
+
+                            </div>
+
+                            <p>
+                                Looking forward to the dessert vendors.
+                                See you there!
+                            </p>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- Comment Form -->
+                    <div class="comment-form-card">
+
+                        <h3>
+                            Join the conversation
+                        </h3>
+
+                        <p>
+                            Signed-in users can ask questions or share
+                            information about the event.
+                        </p>
+
+                        <form>
+
+                            <label
+                                for="commentText"
+                                class="form-label">
+
+                                Your comment
+
+                            </label>
+
+                            <textarea
+                                class="form-control"
+                                id="commentText"
+                                rows="4"
+                                placeholder="Write a comment..."
+                                required></textarea>
+
+
+                            <div class="comment-form-actions">
+
+                                <span>
+
+                                    <i class="bi bi-person-circle"></i>
+
+                                    Posting as Taylor Morgan
+
+                                </span>
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-nightbite">
+
+                                    Post Comment
+
+                                    <i class="bi bi-send ms-2"></i>
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+
+            <!-- Booking Column -->
+            <div class="col-lg-4">
+
+                <aside class="booking-panel">
+
+                    <div class="booking-panel-header">
+
+                        <span class="price-label">
+
+                            {% if event.ticket_price == 0 %}
+                                Entry
+                            {% else %}
+                                Tickets from
+                            {% endif %}
+
+                        </span>
+
+
+                        <div class="booking-price">
+
+                            {% if event.ticket_price == 0 %}
+
+                                Free
+
+                            {% else %}
+
+                                ${{ '%.2f'|format(event.ticket_price) }}
+
+                                <small>
+                                    per person
+                                </small>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Availability -->
+                    <div class="availability-box">
+
+                        <div>
+
+                            <i class="bi bi-ticket-perforated"></i>
+
+                            <span>
+
+                                {% if event.status == 'Open' %}
+                                    Tickets available
+                                {% elif event.status == 'Sold Out' %}
+                                    Sold out
+                                {% elif event.status == 'Cancelled' %}
+                                    Event cancelled
+                                {% else %}
+                                    Event inactive
+                                {% endif %}
+
+                            </span>
+
+                        </div>
+
+
+                        <strong>
+
+                            {% if event.status == 'Open' %}
+                                {{ event.remaining_tickets }} remaining
+                            {% elif event.status == 'Sold Out' %}
+                                0 remaining
+                            {% else %}
+                                Unavailable
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- Booking Form -->
+                    {% if event.status == 'Open' %}
 
                         <form>
 
@@ -428,15 +807,30 @@
 
                                 </label>
 
+
                                 <select
                                     id="ticketQuantity"
                                     class="form-select form-select-lg">
 
-                                    <option selected>1 ticket</option>
-                                    <option>2 tickets</option>
-                                    <option>3 tickets</option>
-                                    <option>4 tickets</option>
-                                    <option>5 tickets</option>
+                                    <option selected>
+                                        1 ticket
+                                    </option>
+
+                                    <option>
+                                        2 tickets
+                                    </option>
+
+                                    <option>
+                                        3 tickets
+                                    </option>
+
+                                    <option>
+                                        4 tickets
+                                    </option>
+
+                                    <option>
+                                        5 tickets
+                                    </option>
 
                                 </select>
 
@@ -450,7 +844,17 @@
                                 </span>
 
                                 <strong>
-                                    $12.00
+
+                                    {% if event.ticket_price == 0 %}
+
+                                        Free
+
+                                    {% else %}
+
+                                        ${{ '%.2f'|format(event.ticket_price) }}
+
+                                    {% endif %}
+
                                 </strong>
 
                             </div>
@@ -468,45 +872,128 @@
 
                         </form>
 
+                    {% else %}
 
-                        <div class="booking-note">
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-lg w-100"
+                            disabled>
 
-                            <i class="bi bi-shield-check"></i>
+                            {% if event.status == 'Sold Out' %}
+                                Sold Out
+                            {% elif event.status == 'Cancelled' %}
+                                Event Cancelled
+                            {% else %}
+                                Event Unavailable
+                            {% endif %}
 
-                            <span>
-                                Your booking confirmation and order ID will be
-                                shown after booking.
-                            </span>
+                        </button>
 
-                        </div>
+                    {% endif %}
 
 
-                        <hr>
+                    <div class="booking-note">
+
+                        <i class="bi bi-shield-check"></i>
+
+                        <span>
+                            Your booking confirmation and order ID will be
+                            shown after booking.
+                        </span>
+
+                    </div>
 
 
-                        <div class="booking-organiser">
+                    <hr>
 
-                            <span>
-                                Hosted by
-                            </span>
 
-                            <strong>
-                                Brisbane Night Markets
-                            </strong>
+                    <div class="booking-organiser">
 
-                            <small>
-                                Event organiser
-                            </small>
+                        <span>
+                            Hosted by
+                        </span>
 
-                        </div>
+                        <strong>
 
-                    </aside>
+                            {% if event.creator %}
+                                {{ event.creator.name }}
+                            {% else %}
+                                NIGHTBITE Event Organiser
+                            {% endif %}
 
-                </div>
+                        </strong>
+
+                        <small>
+                            Event organiser
+                        </small>
+
+                    </div>
+
+                </aside>
 
             </div>
 
         </div>
 
-    </main>
+    </div>
+
+</main>
+
+
+<!-- Recommendation View All Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const viewAllButton =
+        document.getElementById('viewAllRecommendations');
+
+    if (!viewAllButton) {
+        return;
+    }
+
+    let expanded = false;
+
+    viewAllButton.addEventListener('click', function () {
+
+        const extraRecommendations =
+            document.querySelectorAll('.extra-recommendation');
+
+        expanded = !expanded;
+
+        extraRecommendations.forEach(function (recommendation) {
+
+            if (expanded) {
+                recommendation.classList.remove('d-none');
+            } else {
+                recommendation.classList.add('d-none');
+            }
+
+        });
+
+        if (expanded) {
+
+            viewAllButton.innerHTML =
+                'Show Fewer Recommendations ' +
+                '<i class="bi bi-chevron-up ms-2"></i>';
+
+        } else {
+
+            viewAllButton.innerHTML =
+                'View All Recommendations ' +
+                '<i class="bi bi-chevron-down ms-2"></i>';
+
+            document
+                .querySelector('.recommendations-section')
+                .scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+        }
+
+    });
+
+});
+</script>
+
+
 {% endblock %}
