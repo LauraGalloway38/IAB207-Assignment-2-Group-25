@@ -1,3 +1,7 @@
+import secrets
+import string
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,14 +12,15 @@ from flask import (
     flash,
     redirect,
     render_template,
+    request,
     url_for,
 )
 from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
 
 from . import db
-from .forms import EventForm, CancelEventForm
-from .models import Category, Event
+from .forms import BookingForm, CancelEventForm, CommentForm, EventForm
+from .models import Category, Comment, Event, Order
 
 
 main_bp = Blueprint('main', __name__)
@@ -26,9 +31,161 @@ def index():
     return render_template('index.html')
 
 
-@main_bp.route('/event')
-def event():
-    return render_template('event.html')
+# Event details, comments and bookings - Jack's section
+
+def brisbane_now():
+    # Matches the Brisbane-time convention used by Event.status.
+    return datetime.now(timezone(timedelta(hours=10))).replace(tzinfo=None)
+
+
+def generate_order_reference():
+    """Return a human-readable NB-XXXXXX reference not already in use."""
+    for _ in range(20):
+        reference = 'NB-' + ''.join(secrets.choice(string.digits) for _ in range(6))
+        taken = db.session.scalar(
+            db.select(Order.id).where(Order.order_reference == reference)
+        )
+        if taken is None:
+            return reference
+    raise RuntimeError('Could not generate a unique order reference.')
+
+
+def render_event_page(event_record, comment_form=None, booking_form=None,
+                      status_code=200):
+    comments = db.session.scalars(
+        db.select(Comment)
+        .where(Comment.event_id == event_record.id)
+        .order_by(Comment.posted_datetime.desc(), Comment.id.desc())
+    ).all()
+    return render_template(
+        'event.html',
+        event=event_record,
+        comments=comments,
+        comment_form=comment_form or CommentForm(formdata=None),
+        booking_form=booking_form or BookingForm(formdata=None),
+    ), status_code
+
+
+def login_redirect(event_id, message):
+    # Return to the event page (GET), never to the POST-only action URL.
+    flash(message, 'info')
+    return redirect(url_for('auth.login', next=url_for('main.event', event_id=event_id)))
+
+
+# /event (no ID) is kept so the current static homepage/footer links still work.
+@main_bp.route('/event', defaults={'event_id': None})
+@main_bp.route('/event/<int:event_id>')
+def event(event_id):
+    if event_id is None:
+        # Temporary fallback until homepage cards link with event_id.
+        event_record = db.session.scalar(
+            db.select(Event)
+            .where(Event.is_cancelled.is_(False), Event.end_datetime > brisbane_now())
+            .order_by(Event.start_datetime, Event.id)
+        ) or db.session.scalar(db.select(Event).order_by(Event.id.desc()))
+        if event_record is None:
+            return render_template('event.html', event=None)
+    else:
+        event_record = db.get_or_404(Event, event_id)
+    return render_event_page(event_record)
+
+
+@main_bp.post('/event/<int:event_id>/comment')
+def post_comment(event_id):
+    event_record = db.get_or_404(Event, event_id)
+    if not current_user.is_authenticated:
+        return login_redirect(event_id, 'Please sign in to post a comment.')
+
+    form = CommentForm()
+    if not form.validate_on_submit():
+        return render_event_page(event_record, comment_form=form)
+
+    comment = Comment(
+        user_id=current_user.id,
+        event_id=event_record.id,
+        comment_text=form.comment_text.data,
+        posted_datetime=brisbane_now(),
+    )
+    try:
+        db.session.add(comment)
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Could not save comment.")
+        flash('Your comment could not be saved. Please try again.', 'danger')
+        return render_event_page(db.get_or_404(Event, event_id),
+                                 comment_form=form, status_code=500)
+
+    flash('Your comment has been posted.', 'success')
+    return redirect(url_for('main.event', event_id=event_id) + '#comments')
+
+
+@main_bp.post('/event/<int:event_id>/book')
+def book_event(event_id):
+    event_record = db.get_or_404(Event, event_id)
+    if not current_user.is_authenticated:
+        return login_redirect(event_id, 'Please sign in to book tickets.')
+
+    form = BookingForm()
+    if not form.validate_on_submit():
+        return render_event_page(event_record, booking_form=form)
+
+    quantity = form.quantity.data
+
+    # Status and availability are calculated by the Event model from
+    # database values at the time of this request.
+    if event_record.status != 'Open':
+        form.quantity.errors.append(
+            f'This event is {event_record.status.lower()} and cannot be booked.'
+        )
+        return render_event_page(event_record, booking_form=form)
+
+    remaining = event_record.remaining_tickets
+    if quantity > remaining:
+        form.quantity.errors.append(
+            f"Only {remaining} ticket{'' if remaining == 1 else 's'} remaining."
+        )
+        return render_event_page(event_record, booking_form=form)
+
+    unit_price = Decimal(event_record.ticket_price).quantize(Decimal('0.01'))
+    order = Order(
+        user_id=current_user.id,
+        event_id=event_record.id,
+        quantity=quantity,
+        unit_price=unit_price,
+        total_amount=(unit_price * quantity).quantize(Decimal('0.01')),
+        booking_datetime=brisbane_now(),
+        order_reference=generate_order_reference(),
+    )
+
+    try:
+        db.session.add(order)
+        db.session.flush()
+        # Re-check inside the same transaction so a competing booking that
+        # committed first cannot push the event over capacity.
+        sold = db.session.scalar(
+            db.select(db.func.coalesce(db.func.sum(Order.quantity), 0))
+            .where(Order.event_id == event_record.id)
+        )
+        if sold > event_record.ticket_capacity:
+            db.session.rollback()
+            event_record = db.get_or_404(Event, event_id)
+            form.quantity.errors.append(
+                'Those tickets have just been booked by someone else. '
+                f'{event_record.remaining_tickets} remaining.'
+            )
+            return render_event_page(event_record, booking_form=form)
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Could not save booking.")
+        flash('Your booking could not be completed. You have not been charged. '
+              'Please try again.', 'danger')
+        return render_event_page(db.get_or_404(Event, event_id),
+                                 booking_form=form, status_code=500)
+
+    flash(f'Booking confirmed! Order reference: {order.order_reference}', 'success')
+    return redirect(url_for('main.bookings', confirmed=order.order_reference))
 
 
 # Event creation and management - Aarnav's section
@@ -166,7 +323,25 @@ def create_event():
 @main_bp.route('/bookings')
 @login_required
 def bookings():
-    return render_template('bookings.html')
+    # Only the signed-in user's orders, newest booking first.
+    orders = db.session.scalars(
+        db.select(Order)
+        .where(Order.user_id == current_user.id)
+        .order_by(Order.booking_datetime.desc(), Order.id.desc())
+    ).all()
+    now = brisbane_now()
+    upcoming_ids = {
+        order.id for order in orders
+        if not order.event.is_cancelled and order.event.end_datetime > now
+    }
+    return render_template(
+        'bookings.html',
+        orders=orders,
+        upcoming_ids=upcoming_ids,
+        total_tickets=sum(order.quantity for order in orders),
+        upcoming_count=len(upcoming_ids),
+        confirmed_reference=request.args.get('confirmed'),
+    )
 
 # List only the events belonging to the signed-in creator.
 @main_bp.route('/my-events')

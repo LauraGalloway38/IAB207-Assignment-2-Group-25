@@ -279,3 +279,40 @@ class EventForm(FlaskForm):
 # Separate form for submitting an event cancellation.
 class CancelEventForm(FlaskForm):
     submit = SubmitField("Cancel event")
+
+# Bookings and comments forms - Jack
+MAX_COMMENT_LENGTH = 1000
+MAX_TICKETS_PER_ORDER = 10
+
+
+class CommentForm(FlaskForm):
+    # Whitespace is stripped first, so blank comments fail DataRequired.
+    comment_text = TextAreaField(
+        "Your comment",
+        filters=[strip_text],
+        validators=[
+            DataRequired(message="Please enter a comment."),
+            Length(
+                max=MAX_COMMENT_LENGTH,
+                message=f"Comments must be {MAX_COMMENT_LENGTH} characters or fewer.",
+            ),
+        ],
+    )
+    submit = SubmitField("Post Comment")
+
+
+class BookingForm(FlaskForm):
+    # Only the quantity comes from the browser. Price, user and availability
+    # are always read on the server.
+    quantity = IntegerField(
+        "Number of tickets",
+        validators=[
+            InputRequired(message="Choose how many tickets to book."),
+            NumberRange(
+                min=1,
+                max=MAX_TICKETS_PER_ORDER,
+                message=f"Choose between 1 and {MAX_TICKETS_PER_ORDER} tickets.",
+            ),
+        ],
+    )
+    submit = SubmitField("Book Tickets")

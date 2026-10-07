@@ -39,7 +39,15 @@ New POST forms must include a Flask-WTF CSRF token (`form.hidden_tag()` or a hid
 
 `init-db` creates missing tables; it does not migrate existing tables. If you already created a database from the original scaffold, back it up and migrate the User table before using this branch. For a disposable prototype database only, move it aside and initialise a fresh one. Do not delete group data.
 
-Event management, AI discovery, bookings and comments are still the existing prototype/scaffold and belong to the other group sections. Their presence in navigation does not mean those features are implemented.
+AI discovery and the homepage event cards are still the existing prototype/scaffold and belong to Laura's section.
+
+## Bookings and comments (Jack)
+
+- `GET /event/<id>` shows the event from the database with its comments, calculated status, remaining tickets and booking controls. Unknown IDs return 404. `GET /event` is kept for the current static homepage links and shows the next upcoming event (or an empty state).
+- `POST /event/<id>/comment` and `POST /event/<id>/book` require sign-in and a CSRF token. Signed-out users are sent to sign in and returned to the event page.
+- Bookings use `current_user.id`, the event's stored `ticket_price` (Decimal) and the model's calculated `status`/`remaining_tickets`, re-checked when the form is submitted. Each order receives an `NB-XXXXXX` reference. Up to 10 tickets per order.
+- `GET /bookings` lists only the signed-in user's orders, newest first. Orders on cancelled events stay in history.
+- Successful posts redirect (POST → redirect → GET); failed database writes are rolled back.
 
 ## Verify
 
@@ -47,4 +55,4 @@ Event management, AI discovery, bookings and comments are still the existing pro
 python -m unittest discover -s tests -v
 ```
 
-Tests use an isolated in-memory database and real CSRF tokens. They cover registration, field validation, hashing, duplicate emails, login errors, navigation, protected pages, safe redirects, logout and error handling.
+Tests use an isolated in-memory database and real CSRF tokens. They cover registration, field validation, hashing, duplicate emails, login errors, navigation, protected pages, safe redirects, logout, error handling, event management, bookings, booking history and comments.

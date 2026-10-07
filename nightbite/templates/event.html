@@ -1,6 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Riverside Night Bites | NIGHTBITE{% endblock %}
+{% block title %}{{ event.title if event else 'Event' }} | NIGHTBITE{% endblock %}
 {% block content %}
+{% if event is none %}
+<!-- No events have been created yet -->
+<main class="event-detail-page">
+    <div class="container py-5 text-center">
+        <h1>No events yet</h1>
+        <p>There are no NIGHTBITE events to show right now. Check back soon.</p>
+        <a class="btn btn-nightbite" href="{{ url_for('main.index') }}">Back to Discover</a>
+    </div>
+</main>
+{% else %}
+{% set status_class = {'Open': 'status-open', 'Sold Out': 'status-sold', 'Cancelled': 'status-cancelled'}.get(event.status, 'status-inactive') %}
 <!-- Event Hero -->
     <header class="event-detail-hero">
 
@@ -14,12 +25,12 @@
             <div class="event-detail-image-wrapper">
 
                 <img
-                    src="{{ url_for('static', filename='img/night-market.jpeg') }}"
-                    alt="Riverside Night Bites night market"
+                    src="{{ url_for('static', filename=event.image_filename) }}"
+                    alt="{{ event.title }}"
                     class="event-detail-image">
 
-                <span class="event-detail-status status-open">
-                    Open
+                <span class="event-detail-status {{ status_class }}">
+                    {{ event.status }}
                 </span>
 
             </div>
@@ -43,15 +54,13 @@
                     <section class="event-detail-heading">
 
                         <span class="event-category">
-                            Night Market
+                            {{ event.category.name }}
                         </span>
 
-                        <h1>Riverside Night Bites</h1>
+                        <h1>{{ event.title }}</h1>
 
                         <p class="event-detail-intro">
-                            Spend the evening by the river with some of Brisbane's
-                            best street-food vendors, local desserts and live
-                            entertainment in the heart of South Brisbane.
+                            {{ event.description|truncate(220) }}
                         </p>
 
                     </section>
@@ -65,7 +74,7 @@
 
                             <div>
                                 <span>Date</span>
-                                <strong>Saturday, 12 September 2026</strong>
+                                <strong>{{ event.start_datetime.strftime('%A, %d %B %Y') }}</strong>
                             </div>
                         </div>
 
@@ -74,8 +83,11 @@
                             <i class="bi bi-clock"></i>
 
                             <div>
-                                <span>Time</span>
-                                <strong>5:00 PM - 10:30 PM</strong>
+                                <span>Time (Brisbane)</span>
+                                <strong>
+                                    {{ event.start_datetime.strftime('%I:%M %p').lstrip('0') }} -
+                                    {% if event.end_datetime.date() != event.start_datetime.date() %}{{ event.end_datetime.strftime('%d %b') }}, {% endif %}{{ event.end_datetime.strftime('%I:%M %p').lstrip('0') }}
+                                </strong>
                             </div>
                         </div>
 
@@ -85,7 +97,7 @@
 
                             <div>
                                 <span>Location</span>
-                                <strong>South Bank Cultural Forecourt</strong>
+                                <strong>{{ event.venue }}</strong>
                             </div>
                         </div>
 
@@ -95,7 +107,7 @@
 
                             <div>
                                 <span>Suburb</span>
-                                <strong>South Brisbane</strong>
+                                <strong>{{ event.suburb }}, {{ event.state }}</strong>
                             </div>
                         </div>
 
@@ -111,27 +123,7 @@
 
                         <h2>An evening built around Brisbane food</h2>
 
-                        <p>
-                            Riverside Night Bites brings together a curated
-                            selection of local food stalls, street-food vendors
-                            and dessert makers for an after-dark dining
-                            experience along the Brisbane River.
-                        </p>
-
-                        <p>
-                            Guests can explore a range of cuisines throughout the
-                            evening, with vendors serving dishes inspired by
-                            Asian, Mediterranean, Australian and Latin American
-                            street food. The event also includes live acoustic
-                            entertainment, communal seating and riverfront
-                            dining areas.
-                        </p>
-
-                        <p>
-                            Entry tickets provide access to the event precinct.
-                            Food and beverages are purchased directly from
-                            individual vendors unless otherwise stated.
-                        </p>
+                        <p style="white-space:pre-line">{{ event.description }}</p>
 
                     </section>
 
@@ -145,6 +137,12 @@
 
                         <h2>Food and guest information</h2>
 
+                        {% set dietary = [] %}
+                        {% if event.vegetarian %}{% set _ = dietary.append('Vegetarian') %}{% endif %}
+                        {% if event.vegan %}{% set _ = dietary.append('Vegan') %}{% endif %}
+                        {% if event.gluten_free %}{% set _ = dietary.append('Gluten-free') %}{% endif %}
+                        {% if event.halal %}{% set _ = dietary.append('Halal') %}{% endif %}
+
                         <div class="event-feature-grid">
 
                             <div class="event-feature">
@@ -152,7 +150,7 @@
 
                                 <div>
                                     <span>Cuisine</span>
-                                    <strong>International street food</strong>
+                                    <strong>{{ event.cuisine }}</strong>
                                 </div>
                             </div>
 
@@ -163,7 +161,7 @@
                                 <div>
                                     <span>Dietary options</span>
                                     <strong>
-                                        Vegetarian, Vegan, Gluten-free
+                                        {{ dietary|join(', ') if dietary else 'Not specified' }}
                                     </strong>
                                 </div>
                             </div>
@@ -175,7 +173,7 @@
                                 <div>
                                     <span>Accessibility</span>
                                     <strong>
-                                        Step-free venue access and accessible facilities
+                                        {{ event.accessibility or 'Contact the organiser for details' }}
                                     </strong>
                                 </div>
                             </div>
@@ -185,9 +183,9 @@
                                 <i class="bi bi-cloud-moon"></i>
 
                                 <div>
-                                    <span>Setting</span>
+                                    <span>Address</span>
                                     <strong>
-                                        Outdoor riverfront event
+                                        {{ event.street_address }}, {{ event.suburb }} {{ event.state }}
                                     </strong>
                                 </div>
                             </div>
@@ -197,6 +195,7 @@
                     </section>
 
 
+                    {% if event.acknowledgement_type != 'none' %}
                     <!-- Acknowledgement -->
                     <section class="acknowledgement-display">
 
@@ -211,18 +210,22 @@
 
                             <h2>Respecting Country</h2>
 
-                            <p>
-                                NIGHTBITE acknowledges the Traditional Custodians
-                                of the land on which this event takes place and
-                                pays respect to Elders past and present.
+                            <p style="white-space:pre-wrap">{{ event.acknowledgement_text }}</p>
+
+                            {% if event.acknowledgement_type == 'enhanced' %}
+                            <p class="small mb-0">
+                                Traditional Custodians: {{ event.traditional_custodians }}<br>
+                                Source: <a href="{{ event.acknowledgement_source }}" rel="noopener noreferrer" target="_blank">{{ event.acknowledgement_source }}</a>
                             </p>
+                            {% endif %}
                         </div>
 
                     </section>
+                    {% endif %}
 
 
                     <!-- Comments -->
-                    <section class="comments-section">
+                    <section class="comments-section" id="comments">
 
                         <div class="comments-heading">
 
@@ -235,98 +238,41 @@
                             </div>
 
                             <span class="comment-count">
-                                3 comments
+                                {{ comments|length }} comment{{ '' if comments|length == 1 else 's' }}
                             </span>
 
                         </div>
 
 
-                        <!-- Comment 1 -->
+                        {% for comment in comments %}
                         <article class="comment-card">
 
                             <div class="comment-avatar">
-                                JL
+                                {{ comment.user.name[:1]|upper }}{% if comment.user.name.split()|length > 1 %}{{ comment.user.name.split()[-1][:1]|upper }}{% endif %}
                             </div>
 
                             <div class="comment-body">
 
                                 <div class="comment-meta">
 
-                                    <strong>Jordan Lee</strong>
+                                    <strong>{{ comment.user.name }}</strong>
 
                                     <span>
-                                        3 September 2026
+                                        {{ comment.posted_datetime.strftime('%d %B %Y, %I:%M %p').lstrip('0') }}
                                     </span>
 
                                 </div>
 
-                                <p>
-                                    Does anyone know if there will be plenty of
-                                    vegan options this year?
-                                </p>
+                                <p style="white-space:pre-line">{{ comment.comment_text }}</p>
 
                             </div>
 
                         </article>
-
-
-                        <!-- Comment 2 -->
-                        <article class="comment-card">
-
-                            <div class="comment-avatar">
-                                SM
-                            </div>
-
-                            <div class="comment-body">
-
-                                <div class="comment-meta">
-
-                                    <strong>Sophie Martin</strong>
-
-                                    <span>
-                                        3 September 2026
-                                    </span>
-
-                                </div>
-
-                                <p>
-                                    Went last year and loved it. The riverside
-                                    setup was great and there were lots of
-                                    different food stalls.
-                                </p>
-
-                            </div>
-
-                        </article>
-
-
-                        <!-- Comment 3 -->
-                        <article class="comment-card">
-
-                            <div class="comment-avatar">
-                                AC
-                            </div>
-
-                            <div class="comment-body">
-
-                                <div class="comment-meta">
-
-                                    <strong>Alex Chen</strong>
-
-                                    <span>
-                                        4 September 2026
-                                    </span>
-
-                                </div>
-
-                                <p>
-                                    Looking forward to the dessert vendors.
-                                    See you there!
-                                </p>
-
-                            </div>
-
-                        </article>
+                        {% else %}
+                        <p class="text-muted">
+                            No comments yet. Be the first to share your thoughts.
+                        </p>
+                        {% endfor %}
 
 
                         <!-- Comment Form -->
@@ -334,44 +280,52 @@
 
                             <h3>Join the conversation</h3>
 
+                            {% if current_user.is_authenticated %}
                             <p>
-                                Signed-in users can ask questions or share
-                                information about the event.
+                                Ask a question or share information about the event.
                             </p>
 
-                            <form>
+                            <form method="post" action="{{ url_for('main.post_comment', event_id=event.id) }}" novalidate>
 
-                                <label for="commentText" class="form-label">
+                                {{ comment_form.csrf_token(id=false) }}
+
+                                <label for="{{ comment_form.comment_text.id }}" class="form-label">
                                     Your comment
                                 </label>
 
-                                <textarea
-                                    class="form-control"
-                                    id="commentText"
-                                    rows="4"
+                                {{ comment_form.comment_text(
+                                    class="form-control" + (" is-invalid" if comment_form.comment_text.errors else ""),
+                                    rows="4",
+                                    maxlength="1000",
                                     placeholder="Write a comment..."
-                                    required></textarea>
+                                ) }}
+
+                                {% for error in comment_form.comment_text.errors %}
+                                <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
+                                {% endfor %}
 
                                 <div class="comment-form-actions">
 
                                     <span>
                                         <i class="bi bi-person-circle"></i>
-                                        Posting as Taylor Morgan
+                                        Posting as {{ current_user.name }}
                                     </span>
 
-                                    <button
-                                        type="submit"
-                                        class="btn btn-nightbite">
-
+                                    <button type="submit" class="btn btn-nightbite">
                                         Post Comment
-
                                         <i class="bi bi-send ms-2"></i>
-
                                     </button>
 
                                 </div>
 
                             </form>
+                            {% else %}
+                            <p>
+                                Please
+                                <a href="{{ url_for('auth.login', next=url_for('main.event', event_id=event.id)) }}">sign in</a>
+                                to post a comment.
+                            </p>
+                            {% endif %}
 
                         </div>
 
@@ -383,7 +337,7 @@
                 <!-- Booking Column -->
                 <div class="col-lg-4">
 
-                    <aside class="booking-panel">
+                    <aside class="booking-panel" id="booking">
 
                         <div class="booking-panel-header">
 
@@ -392,7 +346,7 @@
                             </span>
 
                             <div class="booking-price">
-                                $12
+                                ${{ '%.2f'|format(event.ticket_price) }}
                                 <small>per person</small>
                             </div>
 
@@ -405,68 +359,83 @@
                                 <i class="bi bi-ticket-perforated"></i>
 
                                 <span>
-                                    Tickets available
+                                    {{ 'Tickets available' if event.status == 'Open' else event.status }}
                                 </span>
                             </div>
 
                             <strong>
-                                46 remaining
+                                {{ event.remaining_tickets }} remaining
                             </strong>
 
                         </div>
 
 
-                        <form>
+                        {% if event.status == 'Open' %}
+                            {% if current_user.is_authenticated %}
+                            <form method="post" action="{{ url_for('main.book_event', event_id=event.id) }}" novalidate>
 
-                            <div class="mb-4">
+                                {{ booking_form.csrf_token(id=false) }}
 
-                                <label
-                                    for="ticketQuantity"
-                                    class="form-label booking-label">
+                                <div class="mb-4">
 
-                                    Number of tickets
+                                    <label for="ticketQuantity" class="form-label booking-label">
+                                        Number of tickets
+                                    </label>
 
-                                </label>
+                                    {% set max_quantity = [event.remaining_tickets, 10]|min %}
+                                    <select id="ticketQuantity" name="quantity"
+                                            class="form-select form-select-lg{% if booking_form.quantity.errors %} is-invalid{% endif %}">
+                                        {% for number in range(1, max_quantity + 1) %}
+                                        <option value="{{ number }}"{% if booking_form.quantity.data == number %} selected{% endif %}>{{ number }} ticket{{ '' if number == 1 else 's' }}</option>
+                                        {% endfor %}
+                                    </select>
 
-                                <select
-                                    id="ticketQuantity"
-                                    class="form-select form-select-lg">
+                                    {% for error in booking_form.quantity.errors %}
+                                    <div class="invalid-feedback d-block" role="alert">{{ error }}</div>
+                                    {% endfor %}
 
-                                    <option selected>1 ticket</option>
-                                    <option>2 tickets</option>
-                                    <option>3 tickets</option>
-                                    <option>4 tickets</option>
-                                    <option>5 tickets</option>
+                                </div>
 
-                                </select>
 
+                                <div class="booking-total">
+
+                                    <span>
+                                        Price per ticket
+                                    </span>
+
+                                    <strong>
+                                        ${{ '%.2f'|format(event.ticket_price) }}
+                                    </strong>
+
+                                </div>
+
+
+                                <button type="submit" class="btn btn-nightbite btn-lg w-100">
+                                    Book Tickets
+                                    <i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+
+                            </form>
+                            {% else %}
+                            <a href="{{ url_for('auth.login', next=url_for('main.event', event_id=event.id)) }}"
+                               class="btn btn-nightbite btn-lg w-100">
+                                Sign in to Book
+                            </a>
+                            {% endif %}
+                        {% else %}
+                            {% for error in booking_form.quantity.errors %}
+                            <div class="alert alert-danger" role="alert">{{ error }}</div>
+                            {% endfor %}
+                            <div class="alert alert-secondary mt-3 mb-0" role="status">
+                                {% if event.status == 'Sold Out' %}
+                                This event is sold out.
+                                {% elif event.status == 'Cancelled' %}
+                                This event has been cancelled. Bookings are closed.
+                                {% else %}
+                                This event has finished. Bookings are closed.
+                                {% endif %}
                             </div>
-
-
-                            <div class="booking-total">
-
-                                <span>
-                                    Total
-                                </span>
-
-                                <strong>
-                                    $12.00
-                                </strong>
-
-                            </div>
-
-
-                            <button
-                                type="submit"
-                                class="btn btn-nightbite btn-lg w-100">
-
-                                Book Tickets
-
-                                <i class="bi bi-arrow-right ms-2"></i>
-
-                            </button>
-
-                        </form>
+                        {% endif %}
 
 
                         <div class="booking-note">
@@ -491,7 +460,7 @@
                             </span>
 
                             <strong>
-                                Brisbane Night Markets
+                                {{ event.creator.name }}
                             </strong>
 
                             <small>
@@ -509,4 +478,5 @@
         </div>
 
     </main>
+{% endif %}
 {% endblock %}
