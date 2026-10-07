@@ -8,6 +8,7 @@ from flask import (
     flash,
     redirect,
     render_template,
+    request,
     url_for,
 )
 from flask_login import current_user, login_required
@@ -16,6 +17,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from . import db
 from .forms import EventForm, CancelEventForm
 from .models import Category, Event
+from sqlalchemy import or_
+from datetime import datetime, timedelta
 
 
 main_bp = Blueprint('main', __name__)
@@ -23,12 +26,235 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def index():
-    return render_template('index.html')
+    selected_category = request.args.get('category', type=int)
+    search_query = request.args.get('q', '').strip()
+    selected_location = request.args.get('location', '').strip()
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
+
+    event_query = db.select(Event)
+
+    # Category filter
+    if selected_category is not None:
+        event_query = event_query.where(
+            Event.category_id == selected_category
+        )
+
+    # Keyword search
+    if search_query:
+        search_term = f'%{search_query}%'
+
+        event_query = event_query.where(
+            or_(
+                Event.title.ilike(search_term),
+                Event.description.ilike(search_term),
+                Event.cuisine.ilike(search_term),
+                Event.venue.ilike(search_term),
+                Event.suburb.ilike(search_term),
+            )
+        )
+
+    # Location filter
+    if selected_location:
+        event_query = event_query.where(
+            Event.suburb == selected_location
+        )
+
+    # Start date filter
+    if date_from:
+        try:
+            start_date = datetime.strptime(
+                date_from,
+                '%Y-%m-%d'
+            )
+
+            event_query = event_query.where(
+                Event.start_datetime >= start_date
+            )
+
+        except ValueError:
+            pass
+
+    # End date filter
+    if date_to:
+        try:
+            end_date = datetime.strptime(
+                date_to,
+                '%Y-%m-%d'
+            )
+
+            # Include the entire selected final day
+            end_date = end_date + timedelta(days=1)
+
+            event_query = event_query.where(
+                Event.start_datetime < end_date
+            )
+
+        except ValueError:
+            pass
+
+    # Get all matching events in chronological order
+    events = db.session.scalars(
+        event_query.order_by(Event.start_datetime.asc())
+    ).all()
+
+    # Check whether the user is searching or filtering
+    has_filters = bool(
+        search_query
+        or selected_location
+        or date_from
+        or date_to
+        or selected_category is not None
+    )
+
+    # On the normal homepage, place upcoming Open events first.
+    # Past, sold out and cancelled events are retained for "View all".
+    if not has_filters:
+        featured_events = [
+            event
+            for event in events
+            if event.status == 'Open'
+            and event.remaining_tickets > 0
+        ]
+
+        other_events = [
+            event
+            for event in events
+            if event not in featured_events
+        ]
+
+        events = featured_events + other_events
+
+    # Categories
+    categories = db.session.scalars(
+        db.select(Category)
+        .order_by(Category.name.asc())
+    ).all()
+
+    # Available suburbs
+    locations = db.session.scalars(
+        db.select(Event.suburb)
+        .distinct()
+        .order_by(Event.suburb.asc())
+    ).all()
+
+    return render_template(
+        'index.html',
+        events=events,
+        categories=categories,
+        locations=locations,
+        selected_category=selected_category,
+        search_query=search_query,
+        selected_location=selected_location,
+        date_from=date_from,
+        date_to=date_to,
+        has_filters=has_filters
+    )
 
 
-@main_bp.route('/event')
-def event():
-    return render_template('event.html')
+@main_bp.route('/event/<int:event_id>')
+def event(event_id):
+    event = db.get_or_404(Event, event_id)
+
+    # Get every other event so the current event is never
+    # recommended to itself.
+    other_events = db.session.scalars(
+        db.select(Event)
+        .where(Event.id != event.id)
+    ).all()
+
+    # Only recommend events that can still reasonably be attended.
+    other_events = [
+        candidate
+        for candidate in other_events
+        if candidate.status == 'Open'
+    ]
+
+    recommendations = []
+
+    for candidate in other_events:
+        score = 0
+        reasons = []
+
+        # Same food-event category
+        if (
+            event.category_id is not None
+            and candidate.category_id == event.category_id
+        ):
+            score += 4
+            reasons.append('Similar event type')
+
+        # Same cuisine
+        if (
+            event.cuisine
+            and candidate.cuisine
+            and event.cuisine.lower() == candidate.cuisine.lower()
+        ):
+            score += 3
+            reasons.append('Similar cuisine')
+
+        # Same suburb
+        if (
+            event.suburb
+            and candidate.suburb
+            and event.suburb.lower() == candidate.suburb.lower()
+        ):
+            score += 2
+            reasons.append('Same area')
+
+        # Matching dietary options
+        dietary_matches = 0
+
+        if event.vegetarian and candidate.vegetarian:
+            dietary_matches += 1
+
+        if event.vegan and candidate.vegan:
+            dietary_matches += 1
+
+        if event.gluten_free and candidate.gluten_free:
+            dietary_matches += 1
+
+        if event.halal and candidate.halal:
+            dietary_matches += 1
+
+        if dietary_matches > 0:
+            score += dietary_matches
+            reasons.append('Matching dietary options')
+
+        # Similar ticket price
+        if (
+            event.ticket_price is not None
+            and candidate.ticket_price is not None
+        ):
+            price_difference = abs(
+                float(event.ticket_price)
+                - float(candidate.ticket_price)
+            )
+
+            if price_difference <= 10:
+                score += 1
+                reasons.append('Similar price')
+
+        recommendations.append({
+            'event': candidate,
+            'score': score,
+            'reasons': reasons
+        })
+
+    # Highest recommendation score first.
+    # Start date provides a consistent tie-breaker.
+    recommendations.sort(
+        key=lambda item: (
+            -item['score'],
+            item['event'].start_datetime
+        )
+    )
+
+    return render_template(
+        'event.html',
+        event=event,
+        recommendations=recommendations
+    )
 
 
 # Event creation and management - Aarnav's section

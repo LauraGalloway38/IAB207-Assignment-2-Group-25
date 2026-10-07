@@ -1558,3 +1558,209 @@ img {
         margin-top: 0.3rem;
     }
 }
+
+/* =========================================================
+   FEATURED EVENTS VIEW ALL
+   ========================================================= */
+
+.featured-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+
+    padding: 0;
+    border: 0;
+    background: transparent;
+
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.featured-view-all:hover {
+    text-decoration: underline;
+}
+
+.featured-view-all i {
+    transition: transform 0.2s ease;
+}
+
+
+
+/* =========================================================
+   RELATED EVENT RECOMMENDATIONS
+   ========================================================= */
+
+.recommendations-section {
+    margin-top: 2rem;
+    padding: 2.5rem 0 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.recommendations-section .section-heading {
+    margin-bottom: 1.75rem !important;
+}
+
+.recommendations-section .section-description {
+    max-width: 650px;
+}
+
+
+/* Recommendation card */
+.recommendation-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-4px);
+}
+
+
+/* Keep all images identical */
+.recommendation-card .event-image-wrapper {
+    height: 190px;
+    flex-shrink: 0;
+}
+
+.recommendation-card .event-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+/* Card content */
+.recommendation-card .event-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem;
+}
+
+
+/* Keep titles aligned */
+.recommendation-card h3 {
+    min-height: 3.6rem;
+    margin-bottom: 1rem;
+    line-height: 1.15;
+}
+
+
+/* Metadata */
+.recommendation-card .event-meta {
+    margin-bottom: 1rem;
+}
+
+.recommendation-card .event-meta p {
+    margin-bottom: 0.45rem;
+}
+
+
+/* Compact recommendation reason */
+.recommendation-reason {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+
+    margin-top: 0.35rem;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 0.9rem;
+
+    border-radius: 10px;
+    background: rgba(239, 95, 57, 0.07);
+
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.recommendation-reason i {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.recommendation-reason span {
+    min-width: 0;
+    font-weight: 600;
+}
+
+
+/* Recommendation card footer */
+.recommendation-card .event-card-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.65rem;
+
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+
+/* Keep price contained */
+.recommendation-card .event-card-footer > div {
+    min-width: 0;
+}
+
+.recommendation-card .price-label {
+    display: block;
+    margin-bottom: 0.1rem;
+}
+
+.recommendation-card .event-card-footer strong {
+    display: block;
+    white-space: nowrap;
+}
+
+
+/* Compact View button */
+.recommendation-card .btn-event {
+    width: auto;
+    min-width: 0;
+    flex-shrink: 1;
+
+    padding: 0.6rem 0.8rem;
+
+    font-size: 0.85rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.recommendation-card .btn-event i {
+    margin-left: 0.25rem;
+}
+
+
+/* View all button */
+#viewAllRecommendations {
+    min-width: 260px;
+    margin-top: 0.5rem;
+}
+
+
+/* Tablet / mobile */
+@media (max-width: 767.98px) {
+
+    .recommendation-card .event-image-wrapper {
+        height: 220px;
+    }
+
+    .recommendation-card h3 {
+        min-height: auto;
+    }
+
+    #viewAllRecommendations {
+        width: 100%;
+        min-width: 0;
+    }
+}

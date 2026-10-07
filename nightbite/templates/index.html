@@ -1,122 +1,610 @@
 {% extends "base.html" %}
+
 {% block title %}NIGHTBITE | Brisbane After-Dark Food Events{% endblock %}
+
 {% block content %}
+
 <!-- Hero -->
-    <header class="hero-section">
+<header class="hero-section">
 
-        <div class="hero-overlay"></div>
+    <div class="hero-overlay"></div>
 
-        <div class="container hero-content">
+    <div class="container hero-content">
 
-            <div class="row">
-                <div class="col-lg-8 col-xl-7">
+        <div class="row">
 
-                    <span class="hero-eyebrow">
-                        Brisbane's food scene after dark
-                    </span>
+            <div class="col-lg-8 col-xl-7">
 
-                    <h1>
-                        Brisbane tastes better
-                        <span>after dark.</span>
-                    </h1>
+                <span class="hero-eyebrow">
+                    Brisbane's food scene after dark
+                </span>
 
-                    <p class="hero-description">
-                        Discover night markets, street-food festivals,
-                        pop-up dining and unforgettable food experiences
-                        happening across Brisbane.
+                <h1>
+                    Brisbane tastes better
+                    <span>after dark.</span>
+                </h1>
+
+                <p class="hero-description">
+                    Discover night markets, street-food festivals,
+                    pop-up dining and unforgettable food experiences
+                    happening across Brisbane.
+                </p>
+
+                <div class="d-flex flex-wrap gap-3">
+
+                    <a href="#events" class="btn btn-nightbite btn-lg">
+                        Explore Events
+                        <i class="bi bi-arrow-down-right ms-2"></i>
+                    </a>
+
+                    <a href="{{ url_for('main.create_event') }}"
+                       class="btn btn-hero-secondary btn-lg">
+                        Host an Event
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- Quick Search -->
+<section class="search-section">
+
+    <div class="container">
+
+        <div class="search-panel shadow-sm">
+
+            <form method="GET"
+                  action="{{ url_for('main.index') }}#events"
+                  class="row g-3 align-items-end">
+
+                <!-- Keyword -->
+                <div class="col-xl-3 col-lg-6">
+
+                    <label for="eventSearch" class="form-label">
+                        What are you craving?
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+
+                        <input
+                            id="eventSearch"
+                            name="q"
+                            type="text"
+                            class="form-control"
+                            placeholder="Search events"
+                            value="{{ search_query or '' }}">
+
+                    </div>
+
+                </div>
+
+
+                <!-- Location -->
+                <div class="col-xl-3 col-lg-6">
+
+                    <label for="location" class="form-label">
+                        Location
+                    </label>
+
+                    <select
+                        id="location"
+                        name="location"
+                        class="form-select">
+
+                        <option value="">
+                            All Brisbane
+                        </option>
+
+                        {% for location in locations %}
+
+                            <option
+                                value="{{ location }}"
+                                {% if selected_location == location %}
+                                    selected
+                                {% endif %}>
+
+                                {{ location }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- From Date -->
+                <div class="col-xl-2 col-md-6">
+
+                    <label for="dateFrom" class="form-label">
+                        From
+                    </label>
+
+                    <input
+                        id="dateFrom"
+                        name="date_from"
+                        type="date"
+                        class="form-control"
+                        value="{{ date_from or '' }}">
+
+                </div>
+
+
+                <!-- To Date -->
+                <div class="col-xl-2 col-md-6">
+
+                    <label for="dateTo" class="form-label">
+                        To
+                    </label>
+
+                    <input
+                        id="dateTo"
+                        name="date_to"
+                        type="date"
+                        class="form-control"
+                        value="{{ date_to or '' }}">
+
+                </div>
+
+
+                <!-- Preserve Category -->
+                {% if selected_category is not none %}
+
+                    <input
+                        type="hidden"
+                        name="category"
+                        value="{{ selected_category }}">
+
+                {% endif %}
+
+
+                <!-- Search -->
+                <div class="col-xl-2 d-grid">
+
+                    <button
+                        type="submit"
+                        class="btn btn-nightbite search-button">
+
+                        Search
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- Categories -->
+<section class="section-space">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div>
+
+                <p class="section-kicker">
+                    Find your flavour
+                </p>
+
+                <h2>
+                    Browse by category
+                </h2>
+
+            </div>
+
+            <p class="section-description">
+                From bustling night markets to one-night-only pop-ups,
+                explore Brisbane's after-dark food scene your way.
+            </p>
+
+        </div>
+
+
+        <div class="category-list">
+
+            <!-- All Events -->
+            <a href="{{ url_for('main.index') }}#events"
+               class="category-pill
+               {% if selected_category is none %}active{% endif %}">
+
+                <i class="bi bi-stars"></i>
+
+                All Events
+
+            </a>
+
+
+            <!-- Database Categories -->
+            {% for category in categories %}
+
+                <a href="{{ url_for(
+                            'main.index',
+                            category=category.id
+                        ) }}#events"
+                   class="category-pill
+                   {% if selected_category == category.id %}
+                       active
+                   {% endif %}">
+
+                    {% if category.name == 'Night Markets' %}
+
+                        <i class="bi bi-shop"></i>
+
+                    {% elif category.name == 'Street Food' %}
+
+                        <i class="bi bi-fire"></i>
+
+                    {% elif category.name == 'Pop-Ups' %}
+
+                        <i class="bi bi-lightning-charge"></i>
+
+                    {% elif category.name == 'Cultural Food' %}
+
+                        <i class="bi bi-globe2"></i>
+
+                    {% elif category.name == 'Dessert' %}
+
+                        <i class="bi bi-cake2"></i>
+
+                    {% elif category.name == 'Food Trucks' %}
+
+                        <i class="bi bi-truck"></i>
+
+                    {% else %}
+
+                        <i class="bi bi-tag"></i>
+
+                    {% endif %}
+
+                    {{ category.name }}
+
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- Events -->
+<section id="events" class="events-section">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div>
+
+                <p class="section-kicker">
+                    What's happening
+                </p>
+
+                <h2>
+
+                    {% if search_query %}
+
+                        Search results for "{{ search_query }}"
+
+                    {% elif has_filters %}
+
+                        Event results
+
+                    {% else %}
+
+                        Featured events
+
+                    {% endif %}
+
+                </h2>
+
+            </div>
+
+
+            <!-- Featured Events Controls -->
+            {% if not has_filters and events|length > 4 %}
+
+                <button
+                    type="button"
+                    id="viewAllFeatured"
+                    class="featured-view-all">
+
+                    View all events
+
+                    <i class="bi bi-arrow-down"></i>
+
+                </button>
+
+            {% elif has_filters %}
+
+                <a href="{{ url_for('main.index') }}#events"
+                   class="text-link">
+
+                    Clear filters
+
+                    <i class="bi bi-x-lg"></i>
+
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="row g-4">
+
+            {% for event in events %}
+
+                <div class="col-md-6 col-xl-3
+                            {% if not has_filters and loop.index > 4 %}
+                                d-none extra-featured-event
+                            {% endif %}">
+
+                    <article class="event-card h-100">
+
+                        <!-- Event Image -->
+                        <div class="event-image-wrapper">
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename=event.image_filename
+                                ) }}"
+                                class="event-image"
+                                alt="{{ event.title }}">
+
+
+                            <!-- Status -->
+                            <span class="status-badge
+
+                                {% if event.status == 'Open' %}
+
+                                    status-open
+
+                                {% elif event.status == 'Sold Out' %}
+
+                                    status-sold
+
+                                {% elif event.status == 'Cancelled' %}
+
+                                    status-cancelled
+
+                                {% else %}
+
+                                    status-inactive
+
+                                {% endif %}">
+
+                                {{ event.status }}
+
+                            </span>
+
+
+                            <!-- Save Button -->
+                            <button
+                                class="event-save"
+                                aria-label="Save {{ event.title }}">
+
+                                <i class="bi bi-heart"></i>
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- Event Body -->
+                        <div class="event-card-body">
+
+                            <span class="event-category">
+
+                                {{ event.category.name }}
+
+                            </span>
+
+
+                            <h3>
+                                {{ event.title }}
+                            </h3>
+
+
+                            <!-- Event Metadata -->
+                            <div class="event-meta">
+
+                                <p>
+
+                                    <i class="bi bi-calendar3"></i>
+
+                                    {{ event.start_datetime.strftime(
+                                        '%a %d %b · %#I:%M %p'
+                                    ) }}
+
+                                </p>
+
+
+                                <p>
+
+                                    <i class="bi bi-geo-alt"></i>
+
+                                    {{ event.suburb }}
+
+                                </p>
+
+                            </div>
+
+
+                            <!-- Event Footer -->
+                            <div class="event-card-footer">
+
+                                <div>
+
+                                    {% if event.ticket_price == 0 %}
+
+                                        <span class="price-label">
+                                            Entry
+                                        </span>
+
+                                        <strong>
+                                            Free
+                                        </strong>
+
+                                    {% else %}
+
+                                        <span class="price-label">
+                                            From
+                                        </span>
+
+                                        <strong>
+                                            ${{ '%.2f'|format(
+                                                event.ticket_price
+                                            ) }}
+                                        </strong>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <a href="{{ url_for(
+                                            'main.event',
+                                            event_id=event.id
+                                        ) }}"
+                                   class="btn btn-event">
+
+                                    View Event
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+            {% else %}
+
+            <!-- Empty Search / Category Results -->
+            <div class="col-12">
+
+                <div class="text-center py-5">
+
+                    <i class="bi bi-search fs-1"></i>
+
+                    <h3 class="mt-3">
+                        No events found
+                    </h3>
+
+                    <p class="text-muted">
+
+                        No events matched
+
+                        {% if search_query %}
+                            "{{ search_query }}"
+                        {% endif %}
+
+                        {% if selected_location %}
+                            {% if search_query %} in {% endif %}
+                            {{ selected_location }}
+                        {% endif %}
+
+                        {% if date_from and date_to %}
+                            {% if search_query or selected_location %} between {% endif %}
+                            {{ date_from }} and {{ date_to }}
+
+                        {% elif date_from %}
+                            {% if search_query or selected_location %} from {% endif %}
+                            {{ date_from }}
+
+                        {% elif date_to %}
+                            {% if search_query or selected_location %} up to {% endif %}
+                            {{ date_to }}
+                        {% endif %}.
+
+                        Try adjusting your filters or browse all events.
+
                     </p>
 
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="#events" class="btn btn-nightbite btn-lg">
-                            Explore Events
-                            <i class="bi bi-arrow-down-right ms-2"></i>
-                        </a>
+                    <a href="{{ url_for('main.index') }}#events"
+                    class="btn btn-nightbite">
 
-                        <a href="{{ url_for('main.create_event') }}"
-                           class="btn btn-hero-secondary btn-lg">
-                            Host an Event
-                        </a>
-                    </div>
+                        Clear Filters
+
+                    </a>
 
                 </div>
+
             </div>
+
+        {% endfor %}
 
         </div>
 
-    </header>
+    </div>
+
+</section>
 
 
-    <!-- Quick Search -->
-    <section class="search-section">
+<!-- Call to Action -->
+<section class="host-section">
 
-        <div class="container">
+    <div class="container">
 
-            <div class="search-panel shadow-sm">
+        <div class="host-card">
 
-                <div class="row g-3 align-items-end">
+            <div class="row align-items-center gy-4">
 
-                    <div class="col-lg-5">
+                <div class="col-lg-8">
 
-                        <label for="eventSearch" class="form-label">
-                            What are you craving?
-                        </label>
+                    <p class="section-kicker light">
+                        Bring Brisbane together
+                    </p>
 
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-search"></i>
-                            </span>
+                    <h2>
+                        Hosting something delicious?
+                    </h2>
 
-                            <input
-                                id="eventSearch"
-                                type="text"
-                                class="form-control"
-                                placeholder="Search events">
-                        </div>
+                    <p>
+                        Create your NIGHTBITE event and connect with
+                        people looking for their next unforgettable
+                        food experience.
+                    </p>
 
-                    </div>
+                </div>
 
 
-                    <div class="col-md-6 col-lg-3">
+                <div class="col-lg-4 text-lg-end">
 
-                        <label for="location" class="form-label">
-                            Location
-                        </label>
+                    <a href="{{ url_for('main.create_event') }}"
+                       class="btn btn-light btn-lg host-button">
 
-                        <select id="location" class="form-select">
-                            <option selected>All Brisbane</option>
-                            <option>Brisbane City</option>
-                            <option>Fortitude Valley</option>
-                            <option>West End</option>
-                            <option>South Brisbane</option>
-                            <option>New Farm</option>
-                        </select>
+                        Create an Event
 
-                    </div>
+                        <i class="bi bi-arrow-up-right ms-2"></i>
 
-
-                    <div class="col-md-6 col-lg-2">
-
-                        <label for="date" class="form-label">
-                            When
-                        </label>
-
-                        <select id="date" class="form-select">
-                            <option selected>Any date</option>
-                            <option>Tonight</option>
-                            <option>This weekend</option>
-                            <option>Next week</option>
-                        </select>
-
-                    </div>
-
-
-                    <div class="col-lg-2 d-grid">
-
-                        <button class="btn btn-nightbite search-button">
-                            Search
-                        </button>
-
-                    </div>
+                    </a>
 
                 </div>
 
@@ -124,411 +612,56 @@
 
         </div>
 
-    </section>
+    </div>
 
+</section>
 
-    <!-- Categories -->
-    <section class="section-space">
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-        <div class="container">
+    const viewAllButton =
+        document.getElementById('viewAllFeatured');
 
-            <div class="section-heading">
-                <div>
-                    <p class="section-kicker">Find your flavour</p>
-                    <h2>Browse by category</h2>
-                </div>
+    if (!viewAllButton) {
+        return;
+    }
 
-                <p class="section-description">
-                    From bustling night markets to one-night-only pop-ups,
-                    explore Brisbane's after-dark food scene your way.
-                </p>
-            </div>
+    let expanded = false;
 
+    viewAllButton.addEventListener('click', function () {
 
-            <div class="category-list">
+        const extraEvents =
+            document.querySelectorAll('.extra-featured-event');
 
-                <a href="#events" class="category-pill active">
-                    <i class="bi bi-stars"></i>
-                    All Events
-                </a>
+        expanded = !expanded;
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-shop"></i>
-                    Night Markets
-                </a>
+        extraEvents.forEach(function (eventCard) {
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-fire"></i>
-                    Street Food
-                </a>
+            if (expanded) {
+                eventCard.classList.remove('d-none');
+            } else {
+                eventCard.classList.add('d-none');
+            }
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-lightning-charge"></i>
-                    Pop-Ups
-                </a>
+        });
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-globe2"></i>
-                    Cultural Food
-                </a>
+        if (expanded) {
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-cake2"></i>
-                    Dessert
-                </a>
+            viewAllButton.innerHTML =
+                'Show fewer events ' +
+                '<i class="bi bi-arrow-up"></i>';
 
-                <a href="#events" class="category-pill">
-                    <i class="bi bi-truck"></i>
-                    Food Trucks
-                </a>
+        } else {
 
-            </div>
+            viewAllButton.innerHTML =
+                'View all events ' +
+                '<i class="bi bi-arrow-down"></i>';
 
-        </div>
+        }
 
-    </section>
+    });
 
+});
+</script>
 
-    <!-- Events -->
-    <section id="events" class="events-section">
-
-        <div class="container">
-
-            <div class="section-heading">
-
-                <div>
-                    <p class="section-kicker">What's happening</p>
-                    <h2>Featured events</h2>
-                </div>
-
-                <a href="#events" class="text-link">
-                    View all events
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-
-            </div>
-
-
-            <div class="row g-4">
-
-
-                <!-- Event 1 -->
-                <div class="col-md-6 col-xl-3">
-
-                    <article class="event-card h-100">
-
-                        <div class="event-image-wrapper">
-
-                            <img
-                                src="{{ url_for('static', filename='img/night-market.jpeg') }}"
-                                class="event-image"
-                                alt="Night market food event">
-
-                            <span class="status-badge status-open">
-                                Open
-                            </span>
-
-                            <button class="event-save"
-                                    aria-label="Save event">
-                                <i class="bi bi-heart"></i>
-                            </button>
-
-                        </div>
-
-
-                        <div class="event-card-body">
-
-                            <span class="event-category">
-                                Night Market
-                            </span>
-
-                            <h3>
-                                Riverside Night Bites
-                            </h3>
-
-                            <div class="event-meta">
-                                <p>
-                                    <i class="bi bi-calendar3"></i>
-                                    Sat 12 Sep · 5:00 PM
-                                </p>
-
-                                <p>
-                                    <i class="bi bi-geo-alt"></i>
-                                    South Brisbane
-                                </p>
-                            </div>
-
-                            <div class="event-card-footer">
-
-                                <div>
-                                    <span class="price-label">From</span>
-                                    <strong>$12</strong>
-                                </div>
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-
-                <!-- Event 2 -->
-                <div class="col-md-6 col-xl-3">
-
-                    <article class="event-card h-100">
-
-                        <div class="event-image-wrapper">
-
-                            <img
-                                src="{{ url_for('static', filename='img/street-food.jpg') }}"
-                                class="event-image"
-                                alt="Street food festival">
-
-                            <span class="status-badge status-sold">
-                                Sold Out
-                            </span>
-
-                            <button class="event-save"
-                                    aria-label="Save event">
-                                <i class="bi bi-heart"></i>
-                            </button>
-
-                        </div>
-
-
-                        <div class="event-card-body">
-
-                            <span class="event-category">
-                                Street Food
-                            </span>
-
-                            <h3>
-                                Valley Street Feast
-                            </h3>
-
-                            <div class="event-meta">
-                                <p>
-                                    <i class="bi bi-calendar3"></i>
-                                    Fri 18 Sep · 6:00 PM
-                                </p>
-
-                                <p>
-                                    <i class="bi bi-geo-alt"></i>
-                                    Fortitude Valley
-                                </p>
-                            </div>
-
-                            <div class="event-card-footer">
-
-                                <div>
-                                    <span class="price-label">From</span>
-                                    <strong>$18</strong>
-                                </div>
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-
-                <!-- Event 3 -->
-                <div class="col-md-6 col-xl-3">
-
-                    <article class="event-card h-100">
-
-                        <div class="event-image-wrapper">
-
-                            <img
-                                src="{{ url_for('static', filename='img/dessert.jpeg') }}"
-                                class="event-image"
-                                alt="Dessert festival">
-
-                            <span class="status-badge status-cancelled">
-                                Cancelled
-                            </span>
-
-                            <button class="event-save"
-                                    aria-label="Save event">
-                                <i class="bi bi-heart"></i>
-                            </button>
-
-                        </div>
-
-
-                        <div class="event-card-body">
-
-                            <span class="event-category">
-                                Dessert
-                            </span>
-
-                            <h3>
-                                Midnight Dessert Club
-                            </h3>
-
-                            <div class="event-meta">
-                                <p>
-                                    <i class="bi bi-calendar3"></i>
-                                    Sat 19 Sep · 7:30 PM
-                                </p>
-
-                                <p>
-                                    <i class="bi bi-geo-alt"></i>
-                                    West End
-                                </p>
-                            </div>
-
-                            <div class="event-card-footer">
-
-                                <div>
-                                    <span class="price-label">From</span>
-                                    <strong>$24</strong>
-                                </div>
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-
-                <!-- Event 4 -->
-                <div class="col-md-6 col-xl-3">
-
-                    <article class="event-card h-100">
-
-                        <div class="event-image-wrapper">
-
-                            <img
-                                src="{{ url_for('static', filename='img/cultural-food.jpg') }}"
-                                class="event-image"
-                                alt="Cultural food night">
-
-                            <span class="status-badge status-inactive">
-                                Inactive
-                            </span>
-
-                            <button class="event-save"
-                                    aria-label="Save event">
-                                <i class="bi bi-heart"></i>
-                            </button>
-
-                        </div>
-
-
-                        <div class="event-card-body">
-
-                            <span class="event-category">
-                                Cultural Food
-                            </span>
-
-                            <h3>
-                                Taste of Asia After Dark
-                            </h3>
-
-                            <div class="event-meta">
-                                <p>
-                                    <i class="bi bi-calendar3"></i>
-                                    Sat 22 Aug · 4:00 PM
-                                </p>
-
-                                <p>
-                                    <i class="bi bi-geo-alt"></i>
-                                    Brisbane City
-                                </p>
-                            </div>
-
-                            <div class="event-card-footer">
-
-                                <div>
-                                    <span class="price-label">From</span>
-                                    <strong>$10</strong>
-                                </div>
-
-                                <a href="{{ url_for('main.event') }}"
-                                   class="btn btn-event">
-                                    View Event
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- Call to action -->
-    <section class="host-section">
-
-        <div class="container">
-
-            <div class="host-card">
-
-                <div class="row align-items-center gy-4">
-
-                    <div class="col-lg-8">
-
-                        <p class="section-kicker light">
-                            Bring Brisbane together
-                        </p>
-
-                        <h2>
-                            Hosting something delicious?
-                        </h2>
-
-                        <p>
-                            Create your NIGHTBITE event and connect with
-                            people looking for their next unforgettable
-                            food experience.
-                        </p>
-
-                    </div>
-
-                    <div class="col-lg-4 text-lg-end">
-
-                        <a href="{{ url_for('main.create_event') }}"
-                           class="btn btn-light btn-lg host-button">
-                            Create an Event
-                            <i class="bi bi-arrow-up-right ms-2"></i>
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
 {% endblock %}
