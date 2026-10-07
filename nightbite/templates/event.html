@@ -1,36 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}{{ event.title }} | NIGHTBITE{% endblock %}
+{% block title %}{{ event.title if event else 'Event' }} | NIGHTBITE{% endblock %}
 
 {% block content %}
 
-<!-- Event Hero -->
+{% if event is none %}
+
+<main class="event-detail-page">
+    <div class="container py-5 text-center">
+        <h1>No events yet</h1>
+        <p>
+            There are no NIGHTBITE events to show right now.
+            Check back soon.
+        </p>
+
+        <a
+            class="btn btn-nightbite"
+            href="{{ url_for('main.index') }}">
+            Back to Discover
+        </a>
+    </div>
+</main>
+
+{% else %}
+
+{% set status_class = {
+    'Open': 'status-open',
+    'Sold Out': 'status-sold',
+    'Cancelled': 'status-cancelled'
+}.get(event.status, 'status-inactive') %}
+
+
+<!-- =========================================================
+     EVENT HERO
+     ========================================================= -->
+
 <header class="event-detail-hero">
 
     <div class="container">
 
-        <a href="{{ url_for('main.index') }}#events" class="back-link">
+        <a
+            href="{{ url_for('main.index') }}#events"
+            class="back-link">
+
             <i class="bi bi-arrow-left"></i>
             Back to events
+
         </a>
+
 
         <div class="event-detail-image-wrapper">
 
             <img
-                src="{{ url_for('static', filename=event.image_filename) }}"
+                src="{{ url_for(
+                    'static',
+                    filename=event.image_filename
+                ) }}"
                 alt="{{ event.title }}"
                 class="event-detail-image">
 
-            <span class="event-detail-status
-                {% if event.status == 'Open' %}
-                    status-open
-                {% elif event.status == 'Sold Out' %}
-                    status-sold
-                {% elif event.status == 'Cancelled' %}
-                    status-cancelled
-                {% else %}
-                    status-inactive
-                {% endif %}">
+            <span class="event-detail-status {{ status_class }}">
                 {{ event.status }}
             </span>
 
@@ -41,24 +70,36 @@
 </header>
 
 
-<!-- Event Content -->
+
+<!-- =========================================================
+     EVENT CONTENT
+     ========================================================= -->
+
 <main class="event-detail-page">
 
     <div class="container">
 
         <div class="row g-5">
 
-            <!-- Left Column -->
+
+            <!-- =================================================
+                 LEFT COLUMN
+                 ================================================= -->
+
             <div class="col-lg-8">
 
+
                 <!-- Event Heading -->
+
                 <section class="event-detail-heading">
 
                     <span class="event-category">
                         {{ event.category.name }}
                     </span>
 
-                    <h1>{{ event.title }}</h1>
+                    <h1>
+                        {{ event.title }}
+                    </h1>
 
                     <p class="event-detail-intro">
                         {{ event.description }}
@@ -67,8 +108,11 @@
                 </section>
 
 
+
                 <!-- Quick Information -->
+
                 <section class="event-info-grid">
+
 
                     <div class="event-info-item">
 
@@ -78,7 +122,9 @@
                             <span>Date</span>
 
                             <strong>
-                                {{ event.start_datetime.strftime('%A, %d %B %Y') }}
+                                {{ event.start_datetime.strftime(
+                                    '%A, %d %B %Y'
+                                ) }}
                             </strong>
                         </div>
 
@@ -90,13 +136,34 @@
                         <i class="bi bi-clock"></i>
 
                         <div>
-                            <span>Time</span>
+
+                            <span>
+                                Time (Brisbane)
+                            </span>
 
                             <strong>
-                                {{ event.start_datetime.strftime('%#I:%M %p') }}
+
+                                {{ event.start_datetime.strftime(
+                                    '%I:%M %p'
+                                ).lstrip('0') }}
+
                                 -
-                                {{ event.end_datetime.strftime('%#I:%M %p') }}
+
+                                {% if event.end_datetime.date()
+                                    != event.start_datetime.date() %}
+
+                                    {{ event.end_datetime.strftime(
+                                        '%d %b'
+                                    ) }},
+
+                                {% endif %}
+
+                                {{ event.end_datetime.strftime(
+                                    '%I:%M %p'
+                                ).lstrip('0') }}
+
                             </strong>
+
                         </div>
 
                     </div>
@@ -125,16 +192,21 @@
                             <span>Suburb</span>
 
                             <strong>
-                                {{ event.suburb }}
+                                {{ event.suburb }}, {{ event.state }}
                             </strong>
                         </div>
 
                     </div>
 
+
                 </section>
 
 
-                <!-- About -->
+
+                <!-- =================================================
+                     ABOUT
+                     ================================================= -->
+
                 <section class="event-content-section">
 
                     <p class="section-kicker">
@@ -145,7 +217,7 @@
                         About {{ event.title }}
                     </h2>
 
-                    <p>
+                    <p style="white-space: pre-line;">
                         {{ event.description }}
                     </p>
 
@@ -157,19 +229,23 @@
 
                     {% if event.street_address %}
 
-                        <p>
-                            <strong>Address:</strong>
-                            {{ event.street_address }},
-                            {{ event.suburb }},
-                            {{ event.state }}
-                        </p>
+                    <p>
+                        <strong>Address:</strong>
+                        {{ event.street_address }},
+                        {{ event.suburb }},
+                        {{ event.state }}
+                    </p>
 
                     {% endif %}
 
                 </section>
 
 
-                <!-- Food and Guest Details -->
+
+                <!-- =================================================
+                     FOOD AND GUEST DETAILS
+                     ================================================= -->
+
                 <section class="event-content-section">
 
                     <p class="section-kicker">
@@ -181,9 +257,30 @@
                     </h2>
 
 
+                    {% set dietary = [] %}
+
+                    {% if event.vegetarian %}
+                        {% set _ = dietary.append('Vegetarian') %}
+                    {% endif %}
+
+                    {% if event.vegan %}
+                        {% set _ = dietary.append('Vegan') %}
+                    {% endif %}
+
+                    {% if event.gluten_free %}
+                        {% set _ = dietary.append('Gluten-free') %}
+                    {% endif %}
+
+                    {% if event.halal %}
+                        {% set _ = dietary.append('Halal') %}
+                    {% endif %}
+
+
                     <div class="event-feature-grid">
 
+
                         <!-- Cuisine -->
+
                         <div class="event-feature">
 
                             <i class="bi bi-fire"></i>
@@ -203,7 +300,9 @@
                         </div>
 
 
+
                         <!-- Dietary -->
+
                         <div class="event-feature">
 
                             <i class="bi bi-leaf"></i>
@@ -216,28 +315,14 @@
 
                                 <strong>
 
-                                    {% set dietary = [] %}
-
-                                    {% if event.vegetarian %}
-                                        {% set _ = dietary.append('Vegetarian') %}
-                                    {% endif %}
-
-                                    {% if event.vegan %}
-                                        {% set _ = dietary.append('Vegan') %}
-                                    {% endif %}
-
-                                    {% if event.gluten_free %}
-                                        {% set _ = dietary.append('Gluten-free') %}
-                                    {% endif %}
-
-                                    {% if event.halal %}
-                                        {% set _ = dietary.append('Halal') %}
-                                    {% endif %}
-
                                     {% if dietary %}
+
                                         {{ dietary | join(', ') }}
+
                                     {% else %}
+
                                         No specific dietary options listed
+
                                     {% endif %}
 
                                 </strong>
@@ -247,7 +332,9 @@
                         </div>
 
 
+
                         <!-- Accessibility -->
+
                         <div class="event-feature">
 
                             <i class="bi bi-universal-access-circle"></i>
@@ -268,7 +355,9 @@
                         </div>
 
 
-                        <!-- Venue -->
+
+                        <!-- Address -->
+
                         <div class="event-feature">
 
                             <i class="bi bi-geo-alt"></i>
@@ -276,29 +365,47 @@
                             <div>
 
                                 <span>
-                                    Venue
+                                    Address
                                 </span>
 
                                 <strong>
-                                    {{ event.venue }}, {{ event.suburb }}
+
+                                    {% if event.street_address %}
+
+                                        {{ event.street_address }},
+                                        {{ event.suburb }},
+                                        {{ event.state }}
+
+                                    {% else %}
+
+                                        {{ event.venue }},
+                                        {{ event.suburb }}
+
+                                    {% endif %}
+
                                 </strong>
 
                             </div>
 
                         </div>
 
+
                     </div>
 
                 </section>
 
 
-                <!-- Acknowledgement -->
+
+                <!-- =================================================
+                     ACKNOWLEDGEMENT OF COUNTRY
+                     ================================================= -->
+
+                {% if event.acknowledgement_type != 'none' %}
+
                 <section class="acknowledgement-display">
 
                     <div class="acknowledgement-icon">
-
                         <i class="bi bi-tree"></i>
-
                     </div>
 
 
@@ -312,32 +419,83 @@
                             Respecting Country
                         </h2>
 
-                        <p>
+
+                        <p style="white-space: pre-wrap;">
+
                             {% if event.acknowledgement_text %}
+
                                 {{ event.acknowledgement_text }}
+
                             {% else %}
-                                NIGHTBITE acknowledges the Traditional Custodians
-                                of the land on which this event takes place and
-                                pays respect to Elders past and present.
+
+                                NIGHTBITE acknowledges the Traditional
+                                Custodians of the land on which this event
+                                takes place and pays respect to Elders past
+                                and present.
+
                             {% endif %}
+
                         </p>
+
+
+                        {% if event.acknowledgement_type == 'enhanced' %}
+
+                        <p class="small mb-0">
+
+                            <strong>
+                                Traditional Custodians:
+                            </strong>
+
+                            {{ event.traditional_custodians }}
+
+                            {% if event.acknowledgement_source %}
+
+                            <br>
+
+                            <strong>
+                                Source:
+                            </strong>
+
+                            <a
+                                href="{{ event.acknowledgement_source }}"
+                                rel="noopener noreferrer"
+                                target="_blank">
+
+                                {{ event.acknowledgement_source }}
+
+                            </a>
+
+                            {% endif %}
+
+                        </p>
+
+                        {% endif %}
 
                     </div>
 
                 </section>
 
+                {% endif %}
 
-                <!-- AI Related Event Recommendations -->
+
+
+                <!-- =================================================
+                     AI RELATED EVENT RECOMMENDATIONS
+                     ================================================= -->
+
                 {% if recommendations %}
 
                 <section class="recommendations-section py-5">
 
                     <div class="container">
 
+
                         <!-- Section Heading -->
+
                         <div class="section-heading mb-4">
 
                             <div>
+
                                 <p class="section-kicker">
                                     Smart discovery
                                 </p>
@@ -350,181 +508,231 @@
                                     Recommended based on this event's food,
                                     location and experience.
                                 </p>
+
                             </div>
 
                         </div>
 
 
+
                         <!-- Recommendation Cards -->
-                        <div class="row g-4" id="recommendationGrid">
+
+                        <div
+                            class="row g-4"
+                            id="recommendationGrid">
+
 
                             {% for recommendation in recommendations %}
 
-                                {% set recommended_event = recommendation.event %}
+                            {% set recommended_event =
+                                recommendation.event %}
 
-                                <div class="col-md-6 col-xl-3 recommendation-item
-                                            {% if loop.index > 4 %}d-none extra-recommendation{% endif %}">
 
-                                    <article class="event-card recommendation-card h-100">
+                            <div class="col-md-6 col-xl-3 recommendation-item
+                                {% if loop.index > 4 %}
+                                    d-none extra-recommendation
+                                {% endif %}">
 
-                                        <!-- Image -->
-                                        <div class="event-image-wrapper">
 
-                                            <img
-                                                src="{{ url_for(
-                                                    'static',
-                                                    filename=recommended_event.image_filename
-                                                ) }}"
-                                                class="event-image"
-                                                alt="{{ recommended_event.title }}">
+                                <article
+                                    class="event-card recommendation-card h-100">
 
-                                            <!-- Status -->
-                                            <span class="status-badge
 
-                                                {% if recommended_event.status == 'Open' %}
-                                                    status-open
+                                    <!-- Image -->
 
-                                                {% elif recommended_event.status == 'Sold Out' %}
-                                                    status-sold
+                                    <div class="event-image-wrapper">
 
-                                                {% elif recommended_event.status == 'Cancelled' %}
-                                                    status-cancelled
+                                        <img
+                                            src="{{ url_for(
+                                                'static',
+                                                filename=recommended_event.image_filename
+                                            ) }}"
+                                            class="event-image"
+                                            alt="{{ recommended_event.title }}">
 
-                                                {% else %}
-                                                    status-inactive
-                                                {% endif %}">
 
-                                                {{ recommended_event.status }}
+                                        <span class="status-badge
 
-                                            </span>
+                                            {% if recommended_event.status
+                                                == 'Open' %}
+
+                                                status-open
+
+                                            {% elif recommended_event.status
+                                                == 'Sold Out' %}
+
+                                                status-sold
+
+                                            {% elif recommended_event.status
+                                                == 'Cancelled' %}
+
+                                                status-cancelled
+
+                                            {% else %}
+
+                                                status-inactive
+
+                                            {% endif %}">
+
+                                            {{ recommended_event.status }}
+
+                                        </span>
+
+                                    </div>
+
+
+
+                                    <!-- Card Body -->
+
+                                    <div class="event-card-body">
+
+                                        <span class="event-category">
+                                            {{ recommended_event.category.name }}
+                                        </span>
+
+                                        <h3>
+                                            {{ recommended_event.title }}
+                                        </h3>
+
+
+
+                                        <!-- Metadata -->
+
+                                        <div class="event-meta">
+
+                                            <p>
+
+                                                <i class="bi bi-calendar3"></i>
+
+                                                {{ recommended_event.start_datetime.strftime(
+                                                    '%a %d %b'
+                                                ) }}
+
+                                                ·
+
+                                                {{ recommended_event.start_datetime.strftime(
+                                                    '%I:%M %p'
+                                                ).lstrip('0') }}
+
+                                            </p>
+
+
+                                            <p>
+
+                                                <i class="bi bi-geo-alt"></i>
+
+                                                {{ recommended_event.suburb }}
+
+                                            </p>
 
                                         </div>
 
 
-                                        <!-- Card Body -->
-                                        <div class="event-card-body">
 
-                                            <span class="event-category">
-                                                {{ recommended_event.category.name }}
+                                        <!-- Recommendation Reason -->
+
+                                        {% if recommendation.reasons %}
+
+                                        <div class="recommendation-reason">
+
+                                            <i class="bi bi-stars"></i>
+
+                                            <span>
+                                                {{ recommendation.reasons[:2]
+                                                    | join(' · ') }}
                                             </span>
 
-                                            <h3>
-                                                {{ recommended_event.title }}
-                                            </h3>
+                                        </div>
+
+                                        {% endif %}
 
 
-                                            <!-- Event Details -->
-                                            <div class="event-meta">
 
-                                                <p>
-                                                    <i class="bi bi-calendar3"></i>
+                                        <!-- Card Footer -->
 
-                                                    {{ recommended_event.start_datetime.strftime(
-                                                        '%a %d %b · %#I:%M %p'
+                                        <div class="event-card-footer">
+
+                                            <div>
+
+                                                {% if
+                                                    recommended_event.ticket_price
+                                                    == 0 %}
+
+                                                <span class="price-label">
+                                                    Entry
+                                                </span>
+
+                                                <strong>
+                                                    Free
+                                                </strong>
+
+                                                {% else %}
+
+                                                <span class="price-label">
+                                                    From
+                                                </span>
+
+                                                <strong>
+
+                                                    ${{ '%.2f'|format(
+                                                        recommended_event.ticket_price
                                                     ) }}
-                                                </p>
 
-                                                <p>
-                                                    <i class="bi bi-geo-alt"></i>
-
-                                                    {{ recommended_event.suburb }}
-                                                </p>
-
-                                            </div>
-
-
-                                                <!-- Recommendation Reason -->
-                                                {% if recommendation.reasons %}
-
-                                                    <div class="recommendation-reason">
-
-                                                        <i class="bi bi-stars"></i>
-
-                                                        <span>
-                                                            {{ recommendation.reasons[:2] | join(' · ') }}
-                                                        </span>
-
-                                                    </div>
+                                                </strong>
 
                                                 {% endif %}
 
-
-                                            <!-- Footer -->
-                                            <div class="event-card-footer">
-
-                                                <div>
-
-                                                    {% if recommended_event.ticket_price == 0 %}
-
-                                                        <span class="price-label">
-                                                            Entry
-                                                        </span>
-
-                                                        <strong>
-                                                            Free
-                                                        </strong>
-
-                                                    {% else %}
-
-                                                        <span class="price-label">
-                                                            From
-                                                        </span>
-
-                                                        <strong>
-                                                            ${{ '%.2f'|format(
-                                                                recommended_event.ticket_price
-                                                            ) }}
-                                                        </strong>
-
-                                                    {% endif %}
-
-                                                </div>
+                                            </div>
 
 
-                                                <a href="{{ url_for(
-                                                            'main.event',
-                                                            event_id=recommended_event.id
-                                                        ) }}"
+                                            <a
+                                                href="{{ url_for(
+                                                    'main.event',
+                                                    event_id=recommended_event.id
+                                                ) }}"
                                                 class="btn btn-event">
 
-                                                    View
+                                                View
 
-                                                    <i class="bi bi-arrow-right"></i>
+                                                <i class="bi bi-arrow-right"></i>
 
-                                                </a>
-                                               
-                                            </div>
+                                            </a>
 
                                         </div>
 
-                                    </article>
+                                    </div>
 
-                                </div>
+                                </article>
+
+                            </div>
 
                             {% endfor %}
 
                         </div>
 
 
+
                         <!-- View All Recommendations -->
+
                         {% if recommendations|length > 4 %}
 
-                            <div class="text-center mt-4">
+                        <div class="text-center mt-4">
 
-                                <button
-                                    type="button"
-                                    id="viewAllRecommendations"
-                                    class="btn btn-nightbite">
+                            <button
+                                type="button"
+                                id="viewAllRecommendations"
+                                class="btn btn-nightbite">
 
-                                    View All Recommendations
+                                View All Recommendations
 
-                                    <i class="bi bi-chevron-down ms-2"></i>
+                                <i class="bi bi-chevron-down ms-2"></i>
 
-                                </button>
+                            </button>
 
-                            </div>
+                        </div>
 
                         {% endif %}
+
 
                     </div>
 
@@ -534,9 +742,14 @@
 
 
 
+                <!-- =================================================
+                     DATABASE COMMENTS
+                     ================================================= -->
 
-                <!-- Comments -->
-                <section class="comments-section">
+                <section
+                    class="comments-section"
+                    id="comments">
+
 
                     <div class="comments-heading">
 
@@ -552,146 +765,149 @@
 
                         </div>
 
+
                         <span class="comment-count">
-                            3 comments
+
+                            {{ comments|length }}
+
+                            comment{{ '' if comments|length == 1 else 's' }}
+
                         </span>
 
                     </div>
 
 
-                    <!-- Comment 1 -->
+
+                    <!-- Existing Comments -->
+
+                    {% for comment in comments %}
+
                     <article class="comment-card">
 
+
                         <div class="comment-avatar">
-                            JL
+
+                            {{ comment.user.name[:1]|upper }}
+
+                            {% if comment.user.name.split()|length > 1 %}
+
+                                {{ comment.user.name.split()[-1][:1]|upper }}
+
+                            {% endif %}
+
                         </div>
+
 
                         <div class="comment-body">
 
+
                             <div class="comment-meta">
 
-                                <strong>
-                                    Jordan Lee
-                                </strong>
+                                <strong>{{ comment.user.name }}</strong>
 
                                 <span>
-                                    3 September 2026
+
+                                    {{ comment.posted_datetime.strftime(
+                                        '%d %B %Y, %I:%M %p'
+                                    ).lstrip('0') }}
+
                                 </span>
 
                             </div>
 
-                            <p>
-                                Does anyone know if there will be plenty of
-                                vegan options this year?
+
+                            <p style="white-space: pre-line;">
+                                {{ comment.comment_text }}
                             </p>
+
 
                         </div>
 
                     </article>
 
 
-                    <!-- Comment 2 -->
-                    <article class="comment-card">
-
-                        <div class="comment-avatar">
-                            SM
-                        </div>
-
-                        <div class="comment-body">
-
-                            <div class="comment-meta">
-
-                                <strong>
-                                    Sophie Martin
-                                </strong>
-
-                                <span>
-                                    3 September 2026
-                                </span>
-
-                            </div>
-
-                            <p>
-                                Went last year and loved it. The riverside
-                                setup was great and there were lots of
-                                different food stalls.
-                            </p>
-
-                        </div>
-
-                    </article>
+                    {% else %}
 
 
-                    <!-- Comment 3 -->
-                    <article class="comment-card">
+                    <p class="text-muted">
+                        No comments yet. Be the first to share your thoughts.
+                    </p>
 
-                        <div class="comment-avatar">
-                            AC
-                        </div>
 
-                        <div class="comment-body">
+                    {% endfor %}
 
-                            <div class="comment-meta">
-
-                                <strong>
-                                    Alex Chen
-                                </strong>
-
-                                <span>
-                                    4 September 2026
-                                </span>
-
-                            </div>
-
-                            <p>
-                                Looking forward to the dessert vendors.
-                                See you there!
-                            </p>
-
-                        </div>
-
-                    </article>
 
 
                     <!-- Comment Form -->
+
                     <div class="comment-form-card">
+
 
                         <h3>
                             Join the conversation
                         </h3>
 
+
+                        {% if current_user.is_authenticated %}
+
+
                         <p>
-                            Signed-in users can ask questions or share
-                            information about the event.
+                            Ask a question or share information about the event.
                         </p>
 
-                        <form>
+
+                        <form method="post" action="{{ url_for('main.post_comment', event_id=event.id) }}" novalidate>
+
+
+                            {{ comment_form.csrf_token(id=false) }}
+
 
                             <label
-                                for="commentText"
+                                for="{{ comment_form.comment_text.id }}"
                                 class="form-label">
 
                                 Your comment
 
                             </label>
 
-                            <textarea
-                                class="form-control"
-                                id="commentText"
-                                rows="4"
+
+                            {{ comment_form.comment_text(
+                                class="form-control" +
+                                    (" is-invalid"
+                                    if comment_form.comment_text.errors
+                                    else ""),
+                                rows="4",
+                                maxlength="1000",
                                 placeholder="Write a comment..."
-                                required></textarea>
+                            ) }}
+
+
+                            {% for error in
+                                comment_form.comment_text.errors %}
+
+                            <div
+                                class="invalid-feedback d-block"
+                                role="alert">
+
+                                {{ error }}
+
+                            </div>
+
+                            {% endfor %}
+
 
 
                             <div class="comment-form-actions">
+
 
                                 <span>
 
                                     <i class="bi bi-person-circle"></i>
 
-                                    Posting as Taylor Morgan
+                                    Posting as {{ current_user.name }}
 
                                 </span>
+
 
                                 <button
                                     type="submit"
@@ -703,33 +919,78 @@
 
                                 </button>
 
+
                             </div>
 
+
                         </form>
+
+
+                        {% else %}
+
+
+                        <p>
+
+                            Please
+
+                            <a href="{{ url_for(
+                                'auth.login',
+                                next=url_for(
+                                    'main.event',
+                                    event_id=event.id
+                                )
+                            ) }}">
+                                sign in
+                            </a>
+
+                            to post a comment.
+
+                        </p>
+
+
+                        {% endif %}
+
 
                     </div>
 
                 </section>
 
+
             </div>
 
 
-            <!-- Booking Column -->
+
+            <!-- =================================================
+                 BOOKING COLUMN
+                 ================================================= -->
+
             <div class="col-lg-4">
 
-                <aside class="booking-panel">
+
+                <aside
+                    class="booking-panel"
+                    id="booking">
+
+
+                    <!-- Price -->
 
                     <div class="booking-panel-header">
+
 
                         <span class="price-label">
 
                             {% if event.ticket_price == 0 %}
+
                                 Entry
+
                             {% else %}
+
                                 Tickets from
+
                             {% endif %}
 
                         </span>
+
 
 
                         <div class="booking-price">
@@ -740,7 +1001,9 @@
 
                             {% else %}
 
-                                ${{ '%.2f'|format(event.ticket_price) }}
+                                ${{ '%.2f'|format(
+                                    event.ticket_price
+                                ) }}
 
                                 <small>
                                     per person
@@ -750,11 +1013,15 @@
 
                         </div>
 
+
                     </div>
 
 
+
                     <!-- Availability -->
+
                     <div class="availability-box">
+
 
                         <div>
 
@@ -763,13 +1030,21 @@
                             <span>
 
                                 {% if event.status == 'Open' %}
+
                                     Tickets available
+
                                 {% elif event.status == 'Sold Out' %}
+
                                     Sold out
+
                                 {% elif event.status == 'Cancelled' %}
+
                                     Event cancelled
+
                                 {% else %}
+
                                     Event inactive
+
                                 {% endif %}
 
                             </span>
@@ -777,27 +1052,48 @@
                         </div>
 
 
+
                         <strong>
 
                             {% if event.status == 'Open' %}
+
                                 {{ event.remaining_tickets }} remaining
+
                             {% elif event.status == 'Sold Out' %}
+
                                 0 remaining
+
                             {% else %}
+
                                 Unavailable
+
                             {% endif %}
 
                         </strong>
 
+
                     </div>
 
 
-                    <!-- Booking Form -->
+
+                    <!-- =================================================
+                         BOOKING FORM
+                         ================================================= -->
+
                     {% if event.status == 'Open' %}
 
-                        <form>
+
+                        {% if current_user.is_authenticated %}
+
+
+                        <form method="post" action="{{ url_for('main.book_event', event_id=event.id) }}" novalidate>
+
+
+                            {{ booking_form.csrf_token(id=false) }}
+
 
                             <div class="mb-4">
+
 
                                 <label
                                     for="ticketQuantity"
@@ -808,40 +1104,66 @@
                                 </label>
 
 
+                                {% set max_quantity =
+                                    [event.remaining_tickets, 10]|min %}
+
+
                                 <select
                                     id="ticketQuantity"
-                                    class="form-select form-select-lg">
+                                    name="quantity"
+                                    class="form-select form-select-lg{% if booking_form.quantity.errors %} is-invalid{% endif %}">
 
-                                    <option selected>
-                                        1 ticket
+
+                                    {% for number in
+                                        range(1, max_quantity + 1) %}
+
+
+                                    <option
+                                        value="{{ number }}"
+                                        {% if booking_form.quantity.data
+                                            == number %}
+                                            selected
+                                        {% endif %}>
+
+                                        {{ number }}
+                                        ticket{{ '' if number == 1 else 's' }}
+
                                     </option>
 
-                                    <option>
-                                        2 tickets
-                                    </option>
 
-                                    <option>
-                                        3 tickets
-                                    </option>
+                                    {% endfor %}
 
-                                    <option>
-                                        4 tickets
-                                    </option>
-
-                                    <option>
-                                        5 tickets
-                                    </option>
 
                                 </select>
+
+
+                                {% for error in
+                                    booking_form.quantity.errors %}
+
+
+                                <div
+                                    class="invalid-feedback d-block"
+                                    role="alert">
+
+                                    {{ error }}
+
+                                </div>
+
+
+                                {% endfor %}
+
 
                             </div>
 
 
+
                             <div class="booking-total">
 
+
                                 <span>
-                                    Total
+                                    Price per ticket
                                 </span>
+
 
                                 <strong>
 
@@ -851,13 +1173,17 @@
 
                                     {% else %}
 
-                                        ${{ '%.2f'|format(event.ticket_price) }}
+                                        ${{ '%.2f'|format(
+                                            event.ticket_price
+                                        ) }}
 
                                     {% endif %}
 
                                 </strong>
 
+
                             </div>
+
 
 
                             <button
@@ -870,27 +1196,80 @@
 
                             </button>
 
+
                         </form>
+
+
+                        {% else %}
+
+
+                        <a
+                            href="{{ url_for(
+                                'auth.login',
+                                next=url_for(
+                                    'main.event',
+                                    event_id=event.id
+                                )
+                            ) }}"
+                            class="btn btn-nightbite btn-lg w-100">
+
+                            Sign in to Book
+
+                        </a>
+
+
+                        {% endif %}
+
 
                     {% else %}
 
-                        <button
-                            type="button"
-                            class="btn btn-secondary btn-lg w-100"
-                            disabled>
+
+                        {% for error in booking_form.quantity.errors %}
+
+
+                        <div
+                            class="alert alert-danger"
+                            role="alert">
+
+                            {{ error }}
+
+                        </div>
+
+
+                        {% endfor %}
+
+
+
+                        <div
+                            class="alert alert-secondary mt-3 mb-0"
+                            role="status">
+
 
                             {% if event.status == 'Sold Out' %}
-                                Sold Out
+
+                                This event is sold out.
+
                             {% elif event.status == 'Cancelled' %}
-                                Event Cancelled
+
+                                This event has been cancelled.
+                                Bookings are closed.
+
                             {% else %}
-                                Event Unavailable
+
+                                This event has finished.
+                                Bookings are closed.
+
                             {% endif %}
 
-                        </button>
+
+                        </div>
+
 
                     {% endif %}
 
+
+
+                    <!-- Booking Note -->
 
                     <div class="booking-note">
 
@@ -907,31 +1286,44 @@
                     <hr>
 
 
+
+                    <!-- Organiser -->
+
                     <div class="booking-organiser">
+
 
                         <span>
                             Hosted by
                         </span>
 
+
                         <strong>
 
                             {% if event.creator %}
+
                                 {{ event.creator.name }}
+
                             {% else %}
+
                                 NIGHTBITE Event Organiser
+
                             {% endif %}
 
                         </strong>
+
 
                         <small>
                             Event organiser
                         </small>
 
+
                     </div>
+
 
                 </aside>
 
             </div>
+
 
         </div>
 
@@ -940,8 +1332,13 @@
 </main>
 
 
-<!-- Recommendation View All Functionality -->
+
+<!-- =========================================================
+     RECOMMENDATION VIEW ALL FUNCTIONALITY
+     ========================================================= -->
+
 <script>
+
 document.addEventListener('DOMContentLoaded', function () {
 
     const viewAllButton =
@@ -963,12 +1360,17 @@ document.addEventListener('DOMContentLoaded', function () {
         extraRecommendations.forEach(function (recommendation) {
 
             if (expanded) {
+
                 recommendation.classList.remove('d-none');
+
             } else {
+
                 recommendation.classList.add('d-none');
+
             }
 
         });
+
 
         if (expanded) {
 
@@ -982,18 +1384,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 'View All Recommendations ' +
                 '<i class="bi bi-chevron-down ms-2"></i>';
 
-            document
-                .querySelector('.recommendations-section')
-                .scrollIntoView({
+            const recommendationsSection =
+                document.querySelector('.recommendations-section');
+
+            if (recommendationsSection) {
+
+                recommendationsSection.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
+
+            }
+
         }
 
     });
 
 });
+
 </script>
 
+
+{% endif %}
 
 {% endblock %}
