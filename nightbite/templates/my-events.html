@@ -1,33 +1,163 @@
+
 {% extends "event-management-base.html" %}
+
+{% block title %}My Events | NIGHTBITE{% endblock %}
+
 {% block content %}
-<h1>My Events</h1>
-<p>Manage the events you have created. Times are shown in Brisbane time (AEST).</p>
-<a class="btn btn-nightbite mb-4" href="{{ url_for('main.create_event') }}">Create an event</a>
-<!-- Show each creator's saved events and calculated availability. -->
-<div class="row g-4">
-{% for event in events %}
-    <div class="col-md-6">
-        <article class="card h-100">
-            <img src="{{ url_for('static', filename=event.image_filename) }}" alt="{{ event.title }}" class="card-img-top" style="height:220px;object-fit:cover">
-            <div class="card-body">
-                <h2 class="h4">{{ event.title }}</h2>
-                <p><span class="badge bg-dark">{{ event.status }}</span></p>
-                <p>{{ event.start_datetime.strftime('%d %b %Y, %I:%M %p') }}<br>{{ event.venue }}, {{ event.suburb }}</p>
-                <p>${{ '%.2f'|format(event.ticket_price) }} AUD · {{ event.remaining_tickets }} of {{ event.ticket_capacity }} tickets remaining</p>
-                <p>{{ event.description }}</p>
-                {% if event.acknowledgement_type != 'none' %}
-                    <h3 class="h6">Acknowledgement of Country</h3>
-                    <p style="white-space:pre-wrap">{{ event.acknowledgement_text }}</p>
-                {% endif %}
-                <a class="btn btn-outline-dark" href="{{ url_for('main.edit_event', event_id=event.id) }}">Edit</a>
-                {% if not event.is_cancelled %}
-                    <a class="btn btn-outline-danger" href="{{ url_for('main.cancel_event', event_id=event.id) }}">Cancel event</a>
-                {% endif %}
-            </div>
-        </article>
+
+<header class="page-header">
+    <div class="container">
+        <p class="section-kicker">Your hosted experiences</p>
+        <h1>My events</h1>
+        <p>
+            Manage your Brisbane food events, update details
+            and keep track of availability.
+        </p>
     </div>
-{% else %}
-    <p>You have not created any events yet.</p>
-{% endfor %}
-</div>
+</header>
+
+<main class="managed-events-page">
+    <div class="container">
+
+        <div class="section-heading managed-events-heading">
+            <div>
+                <p class="section-kicker">Event management</p>
+                <h2>Your hosted events</h2>
+            </div>
+
+            <a class="btn btn-nightbite"
+               href="{{ url_for('main.create_event') }}">
+                <i class="bi bi-plus-lg me-2"></i>
+                Create an event
+            </a>
+        </div>
+
+        {% if events %}
+
+        <div class="row g-4">
+
+            {% for event in events %}
+
+            {% set status_class = {
+                'Open': 'status-open',
+                'Sold Out': 'status-sold',
+                'Cancelled': 'status-cancelled'
+            }.get(event.status, 'status-inactive') %}
+
+            <div class="col-md-6 col-xl-4">
+
+                <article class="event-card managed-event-card h-100">
+
+                    <div class="event-image-wrapper">
+
+                        <img
+                            src="{{ url_for('static', filename=event.image_filename) }}"
+                            class="event-image"
+                            alt="{{ event.title }}">
+
+                        <span class="status-badge {{ status_class }}">
+                            {{ event.status }}
+                        </span>
+
+                    </div>
+
+                    <div class="event-card-body">
+
+                        <span class="event-category">
+                            {{ event.category.name }}
+                        </span>
+
+                        <h3>{{ event.title }}</h3>
+
+                        <div class="event-meta">
+
+                            <p>
+                                <i class="bi bi-calendar3"></i>
+                                {{ event.start_datetime.strftime('%d %b %Y, %I:%M %p') }}
+                            </p>
+
+                            <p>
+                                <i class="bi bi-geo-alt"></i>
+                                {{ event.venue }}, {{ event.suburb }}
+                            </p>
+
+                            <p>
+                                <i class="bi bi-ticket-perforated"></i>
+                                <span>{{ event.remaining_tickets }} of {{ event.ticket_capacity }} tickets remaining</span>
+                            </p>
+
+                        </div>
+
+                        <p class="managed-event-description">
+                            {{ event.description }}
+                        </p>
+
+                        {% if event.acknowledgement_type != 'none' %}
+
+                        <div class="managed-event-acknowledgement">
+                            <h4>
+                                <i class="bi bi-info-circle me-2"></i>
+                                Acknowledgement of Country
+                            </h4>
+
+                            <p>{{ event.acknowledgement_text }}</p>
+                        </div>
+
+                        {% endif %}
+
+                        <div class="managed-event-actions">
+
+                        <div class="managed-event-actions">
+
+                            <a class="btn btn-event"
+                               href="{{ url_for('main.edit_event', event_id=event.id) }}">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                Edit event
+                            </a>
+
+                            {% if not event.is_cancelled %}
+
+                            <a class="btn btn-outline-danger"
+                               href="{{ url_for('main.cancel_event', event_id=event.id) }}">
+                                Cancel event
+                            </a>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <section class="managed-empty-state">
+
+            <i class="bi bi-calendar2-plus"></i>
+
+            <h2>No events hosted yet</h2>
+
+            <p>
+                Create your first food event and share it with Brisbane.
+            </p>
+
+            <a class="btn btn-nightbite"
+               href="{{ url_for('main.create_event') }}">
+                Create your first event
+            </a>
+
+        </section>
+
+        {% endif %}
+
+    </div>
+</main>
+
 {% endblock %}

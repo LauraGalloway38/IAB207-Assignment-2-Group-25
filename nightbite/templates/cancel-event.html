@@ -1,15 +1,72 @@
+
 {% extends "event-management-base.html" %}
-{% block title %}Cancel Event{% endblock %}
+
+{% block title %}Cancel Event | NIGHTBITE{% endblock %}
+
 {% block content %}
-<h1>Cancel event</h1>
-<p>Cancel <strong>{{ event_record.title }}</strong>? Existing bookings and comments will be retained. This action cannot be undone here.</p>
-<!-- Explicit confirmation with CSRF protection. -->
-<form method="post" action="{{ url_for('main.cancel_event', event_id=event_record.id) }}">
-    {{ form.hidden_tag() }}
-    {% for errors in form.errors.values() %}
-        {% for error in errors %}<p class="text-danger" role="alert">{{ error }}</p>{% endfor %}
-    {% endfor %}
-    {{ form.submit(class="btn btn-danger") }}
-    <a class="btn btn-outline-dark" href="{{ url_for('main.my_events') }}">Keep event / go back</a>
-</form>
+
+<header class="page-header">
+    <div class="container">
+
+        <p class="section-kicker">Event management</p>
+
+        <h1>Cancel event</h1>
+
+        <p>Review this action before confirming.</p>
+
+    </div>
+</header>
+
+<main class="confirmation-page">
+
+    <div class="container">
+
+        <section class="confirmation-card"
+                 aria-labelledby="cancel-event-heading">
+
+            <span class="confirmation-icon" aria-hidden="true">
+                <i class="bi bi-exclamation-triangle"></i>
+            </span>
+
+            <h2 id="cancel-event-heading">
+                Cancel {{ event_record.title }}?
+            </h2>
+
+            <p>
+                Existing bookings and comments will be retained.
+                This action cannot be undone here.
+            </p>
+
+            <form method="post"
+                  action="{{ url_for('main.cancel_event', event_id=event_record.id) }}">
+
+                {{ form.hidden_tag() }}
+
+                {% for errors in form.errors.values() %}
+                    {% for error in errors %}
+                        <p class="text-danger" role="alert">
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                {% endfor %}
+
+                <div class="confirmation-actions">
+
+                    {{ form.submit(class="btn btn-danger") }}
+
+                    <a class="btn btn-form-cancel"
+                       href="{{ url_for('main.my_events') }}">
+                        Keep event / go back
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+</main>
+
 {% endblock %}

@@ -28,6 +28,12 @@ from .forms import (
 )
 from .models import Category, Comment, Event, Order
 
+from .ai_search import (
+    hybrid_search,
+    index_event_embedding,
+    get_event_embedding,
+    cosine_similarity,
+)
 
 main_bp = Blueprint('main', __name__)
 
@@ -82,102 +88,196 @@ def login_redirect(event_id, message):
     )
 
 
+
+def explain_recommendation(source, candidate, semantic_score):
+    """Explain semantic relevance and verified shared attributes."""
+
+    reasons = []
+
+    if semantic_score >= 0.60:
+        reasons.append("Strong AI-matched event similarity")
+    else:
+        reasons.append("AI-matched related food experience")
+
+    if (
+        source.category_id is not None
+        and source.category_id == candidate.category_id
+        and candidate.category is not None
+    ):
+        reasons.append(
+            f"Both are {candidate.category.name} events"
+        )
+
+    elif (
+        source.cuisine
+        and candidate.cuisine
+        and source.cuisine.strip().casefold()
+        == candidate.cuisine.strip().casefold()
+    ):
+        reasons.append(
+            f"Both feature {candidate.cuisine} cuisine"
+        )
+
+    elif (
+        source.suburb
+        and candidate.suburb
+        and source.suburb.strip().casefold()
+        == candidate.suburb.strip().casefold()
+    ):
+        reasons.append(
+            f"Both are located in {candidate.suburb}"
+        )
+
+    else:
+        dietary_labels = {
+            "vegetarian": "vegetarian",
+            "vegan": "vegan",
+            "gluten_free": "gluten-free",
+            "halal": "halal",
+        }
+
+        shared_dietary = [
+            label
+            for field, label in dietary_labels.items()
+            if getattr(source, field, False)
+            and getattr(candidate, field, False)
+        ]
+
+        if shared_dietary:
+            reasons.append(
+                "Shared dietary options: "
+                + ", ".join(shared_dietary)
+            )
+
+    return reasons[:2]
+
+
+
 def build_recommendations(event_record):
-    """Create related-event recommendations for an event."""
+    """Rank similar events using semantic and attribute similarity."""
 
     other_events = db.session.scalars(
-        db.select(Event)
-        .where(Event.id != event_record.id)
+        db.select(Event).where(Event.id != event_record.id)
     ).all()
 
-    # Only recommend events that are currently bookable.
     other_events = [
         candidate
         for candidate in other_events
-        if 'Open' == candidate.status
+        if candidate.status == 'Open'
     ]
+
+    if not other_events:
+        return []
+
+    dietary_fields = {
+        'vegetarian': 'vegetarian-friendly options',
+        'vegan': 'vegan-friendly options',
+        'gluten_free': 'gluten-free options',
+        'halal': 'halal options',
+    }
 
     recommendations = []
 
-    for candidate in other_events:
-        score = 0
-        reasons = []
+    try:
+        source_embedding = get_event_embedding(event_record)
 
-        # Same food-event category
-        if (
-            event_record.category_id is not None
-            and candidate.category_id == event_record.category_id
-        ):
-            score += 4
-            reasons.append('Similar event type')
+        for candidate in other_events:
+            candidate_embedding = get_event_embedding(candidate)
 
-        # Same cuisine
-        if (
-            event_record.cuisine
-            and candidate.cuisine
-            and event_record.cuisine.lower()
-            == candidate.cuisine.lower()
-        ):
-            score += 3
-            reasons.append('Similar cuisine')
-
-        # Same suburb
-        if (
-            event_record.suburb
-            and candidate.suburb
-            and event_record.suburb.lower()
-            == candidate.suburb.lower()
-        ):
-            score += 2
-            reasons.append('Same area')
-
-        # Matching dietary options
-        dietary_matches = 0
-
-        if event_record.vegetarian and candidate.vegetarian:
-            dietary_matches += 1
-
-        if event_record.vegan and candidate.vegan:
-            dietary_matches += 1
-
-        if event_record.gluten_free and candidate.gluten_free:
-            dietary_matches += 1
-
-        if event_record.halal and candidate.halal:
-            dietary_matches += 1
-
-        if dietary_matches > 0:
-            score += dietary_matches
-            reasons.append('Matching dietary options')
-
-        # Similar ticket price
-        if (
-            event_record.ticket_price is not None
-            and candidate.ticket_price is not None
-        ):
-            price_difference = abs(
-                event_record.ticket_price
-                - candidate.ticket_price
+            semantic_score = max(
+                0.0,
+                cosine_similarity(source_embedding, candidate_embedding)
             )
 
-            if price_difference <= 10:
-                score += 1
-                reasons.append('Similar price')
+            if semantic_score < 0.40:
+                continue
 
-        recommendations.append({
-            'event': candidate,
-            'score': score,
-            'reasons': reasons,
-        })
+            attribute_score = 0.0
+            reasons = []
+
+            if (
+                event_record.category_id is not None
+                and candidate.category_id == event_record.category_id
+            ):
+                attribute_score += 0.40
+                reasons.append('Similar food-event experience')
+
+            if (
+                event_record.cuisine
+                and candidate.cuisine
+                and event_record.cuisine.strip().casefold()
+                == candidate.cuisine.strip().casefold()
+            ):
+                attribute_score += 0.30
+                reasons.append(
+                    f'Shared {candidate.cuisine} cuisine'
+                )
+
+            shared_dietary = [
+                label
+                for field, label in dietary_fields.items()
+                if getattr(event_record, field, False)
+                and getattr(candidate, field, False)
+            ]
+
+            
+            if shared_dietary:
+                attribute_score += 0.20 * (
+                    len(shared_dietary) / len(dietary_fields)
+                )
+
+                reasons.append(
+                    'Shared dietary options: '
+                    + ', '.join(shared_dietary)
+                )
+
+
+            if (
+                event_record.suburb
+                and candidate.suburb
+                and event_record.suburb.strip().casefold()
+                == candidate.suburb.strip().casefold()
+            ):
+                attribute_score += 0.10
+                reasons.append('Located in the same suburb')
+
+            hybrid_score = (
+                0.75 * semantic_score
+                + 0.25 * attribute_score
+            )
+
+            
+            reasons = explain_recommendation(
+                event_record,
+                candidate,
+                semantic_score
+            )
+
+
+            recommendations.append({
+                'event': candidate,
+                'score': round(hybrid_score, 4),
+                'semantic_score': round(semantic_score, 4),
+                'attribute_score': round(attribute_score, 4),
+                'reasons': reasons,
+            })
+
+    except Exception:
+        current_app.logger.exception(
+            'AI recommendations failed.'
+        )
+        return []
 
     recommendations.sort(
         key=lambda item: (
             -item['score'],
             item['event'].start_datetime,
+            item['event'].id,
         )
     )
 
-    return recommendations
+    return recommendations[:4]
+
 
 
 def render_event_page(
@@ -252,19 +352,7 @@ def index():
         )
 
     # Keyword search
-    if search_query:
-        search_term = f'%{search_query}%'
-
-        event_query = event_query.where(
-            or_(
-                Event.title.ilike(search_term),
-                Event.description.ilike(search_term),
-                Event.cuisine.ilike(search_term),
-                Event.venue.ilike(search_term),
-                Event.suburb.ilike(search_term),
-            )
-        )
-
+    
     # Location filter
     if selected_location:
         event_query = event_query.where(
@@ -310,6 +398,15 @@ def index():
             Event.start_datetime.asc()
         )
     ).all()
+
+    if search_query:
+        print(f"AI SEARCH RUNNING: {search_query}", flush=True)
+        events = hybrid_search(search_query, events)
+        print(
+            "AI RANKED RESULTS:",
+            [event.title for event in events[:5]],
+            flush=True,
+        )
 
     # Check whether the user is searching or filtering
     has_filters = bool(
@@ -768,9 +865,10 @@ def create_event():
                 image_data
             )
 
-            db.session.add(
-                event_record
-            )
+            db.session.add(event_record)
+            db.session.flush()
+
+            index_event_embedding(event_record)
 
             db.session.commit()
 
@@ -1010,6 +1108,8 @@ def edit_event(event_id):
                 event_record.image_filename = (
                     f"uploads/{filename}"
                 )
+
+            index_event_embedding(event_record)
 
             db.session.commit()
 

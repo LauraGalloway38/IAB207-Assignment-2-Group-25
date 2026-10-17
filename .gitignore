@@ -9,3 +9,5 @@ instance/
 .DS_Store
 
 .vscode/
+
+nightbite/static/uploads/
