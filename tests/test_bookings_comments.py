@@ -437,7 +437,8 @@ class BookingTests(NightbiteTestCase):
             event = db.session.get(Event, self.make_event())
             with self.assertRaises(AttributeError):
                 event.status = 'Open'
-        self.assertNotIn('.status =', (PACKAGE_DIR / 'views.py').read_text())
+        source = (PACKAGE_DIR / 'views.py').read_text()
+        self.assertIsNone(re.search(r'\.status\s*=(?!=)', source))
         self.assertNotIn('remaining_tickets -=', (PACKAGE_DIR / 'views.py').read_text())
 
     def test_035_database_failure_rolls_back_order(self):
@@ -719,12 +720,14 @@ class IntegrationRegressionTests(NightbiteTestCase):
             tables = set(inspect(db.engine).get_table_names())
         self.assertTrue({'user', 'category', 'event', 'comment', 'order'} <= tables)
 
+    
     def test_072_no_duplicate_models_or_tables(self):
         classes = [mapper.class_.__name__ for mapper in db.Model.registry.mappers]
         self.assertEqual(len(classes), len(set(classes)))
-        self.assertEqual(sorted(classes), ['Category', 'Comment', 'Event', 'Order', 'User'])
-        self.assertEqual(sorted(db.metadata.tables), ['category', 'comment', 'event', 'order', 'user'])
+        self.assertEqual(sorted(classes), ['Category', 'Comment', 'Event', 'EventEmbedding', 'Order', 'User'])
+        self.assertEqual(sorted(db.metadata.tables), ['category', 'comment', 'event', 'event_embedding', 'order', 'user'])
         self.assertNotIn('class Booking', (PACKAGE_DIR / 'models.py').read_text())
+
 
     def test_073_no_duplicate_endpoints(self):
         rules = [(rule.rule, tuple(sorted(rule.methods))) for rule in self.app.url_map.iter_rules()]

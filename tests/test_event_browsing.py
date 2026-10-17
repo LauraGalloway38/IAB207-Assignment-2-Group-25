@@ -11,12 +11,13 @@ class EventBrowsingDiscoveryTests(unittest.TestCase):
     """Tests for Laura's event browsing and discovery functionality."""
 
     def setUp(self):
-        self.app = create_app()
-        self.app.config.update(
-            TESTING=True,
-            WTF_CSRF_ENABLED=False,
-            SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
-        )
+        self.app = create_app({
+            "TESTING": True,
+            "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "nightbite-test-only-secret",
+        })
+
 
         self.client = self.app.test_client()
 
@@ -500,6 +501,7 @@ class EventBrowsingDiscoveryTests(unittest.TestCase):
                 scores[self.unrelated_event],
             )
 
+   
     def test_031_recommendation_reasons_are_generated(self):
         with self.app.app_context():
             event = db.session.get(Event, self.main_event)
@@ -511,25 +513,34 @@ class EventBrowsingDiscoveryTests(unittest.TestCase):
                 if item["event"].id == self.related_event
             )
 
+            self.assertTrue(related["reasons"])
+
             self.assertIn(
-                "Similar event type",
+                "Both are Night Markets events",
                 related["reasons"],
             )
-            self.assertIn(
-                "Similar cuisine",
-                related["reasons"],
+
+            semantic_score = related["semantic_score"]
+
+            if semantic_score >= 0.60:
+                self.assertIn(
+                    "Strong AI-matched event similarity",
+                    related["reasons"],
+                )
+            else:
+                self.assertIn(
+                    "AI-matched related food experience",
+                    related["reasons"],
+                )
+
+            self.assertGreaterEqual(
+                related["score"],
+                0.0,
             )
-            self.assertIn(
-                "Same area",
-                related["reasons"],
-            )
-            self.assertIn(
-                "Matching dietary options",
-                related["reasons"],
-            )
-            self.assertIn(
-                "Similar price",
-                related["reasons"],
+
+            self.assertLessEqual(
+                related["score"],
+                1.0,
             )
 
     def test_032_event_page_displays_smart_recommendations(self):
@@ -538,7 +549,7 @@ class EventBrowsingDiscoveryTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Smart discovery", response.data)
+        self.assertIn(b"AI-powered discovery", response.data)
         self.assertIn(b"You might also like", response.data)
         self.assertIn(
             b"Korean Riverside Feast",

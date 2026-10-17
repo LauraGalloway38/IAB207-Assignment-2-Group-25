@@ -172,3 +172,49 @@ class Order(db.Model):
 # class Comment(db.Model):
 #
 # class Order(db.Model):
+
+
+class EventEmbedding(db.Model):
+    __tablename__ = "event_embedding"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("event.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    model_name = db.Column(
+        db.String(150),
+        nullable=False,
+    )
+
+    content_hash = db.Column(
+        db.String(64),
+        nullable=False,
+    )
+
+    embedding = db.Column(
+        db.LargeBinary,
+        nullable=False,
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    event = db.relationship(
+        "Event",
+        backref=db.backref(
+            "ai_embedding",
+            uselist=False,
+            cascade="all, delete-orphan",
+            single_parent=True,
+        ),
+    )

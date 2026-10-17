@@ -496,17 +496,22 @@
 
                             <div>
 
-                                <p class="section-kicker">
-                                    Smart discovery
-                                </p>
+                                
+                                <div class="smart-discovery-heading">
+                                    <span class="smart-discovery-icon" aria-hidden="true">
+                                        <i class="bi bi-stars"></i>
+                                    </span>
 
-                                <h2>
-                                    You might also like
-                                </h2>
+                                    <div>
+                                        <p class="section-kicker">AI-powered discovery</p>
+                                        <h2>You might also like</h2>
+                                        <p class="section-description mb-0">
+                                            Discover more Brisbane food experiences using
+                                            semantic AI matching and shared event preferences.
+                                        </p>
+                                    </div>
+                                </div>
 
-                                <p class="section-description mb-0">
-                                    Recommended based on this event's food,
-                                    location and experience.
                                 </p>
 
                             </div>
@@ -528,7 +533,7 @@
                                 recommendation.event %}
 
 
-                            <div class="col-md-6 col-xl-3 recommendation-item
+                            <div class="col-md-6 recommendation-item">
                                 {% if loop.index > 4 %}
                                     d-none extra-recommendation
                                 {% endif %}">
@@ -629,20 +634,35 @@
 
 
 
-                                        <!-- Recommendation Reason -->
+                                        
+{% if recommendation.reasons %}
+<div class="recommendation-insight">
 
-                                        {% if recommendation.reasons %}
+    <div class="recommendation-match">
+        <i class="bi bi-stars" aria-hidden="true"></i>
 
-                                        <div class="recommendation-reason">
+        <span>
+            {% if recommendation.semantic_score >= 0.60 %}
+                Strong AI match
+            {% else %}
+                AI-recommended experience
+            {% endif %}
+        </span>
+    </div>
 
-                                            <i class="bi bi-stars"></i>
+    {% if recommendation.reasons|length > 1 %}
+    <p class="recommendation-explanation">
+        <i class="bi bi-check2-circle" aria-hidden="true"></i>
+        <span>{{ recommendation.reasons[1] }}</span>
+    </p>
+    {% else %}
+    <p class="recommendation-explanation">
+        <i class="bi bi-check2-circle" aria-hidden="true"></i>
+        <span>Similar event descriptions and experiences</span>
+    </p>
+    {% endif %}
 
-                                            <span>
-                                                {{ recommendation.reasons[:2]
-                                                    | join(' · ') }}
-                                            </span>
-
-                                        </div>
+</div>
 
                                         {% endif %}
 
