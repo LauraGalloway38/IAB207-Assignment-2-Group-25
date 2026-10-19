@@ -2,8 +2,10 @@
 
 **Draft for team completion; not a signed declaration.**
 
-Unit: IAB207 — Assignment 2  
-Project: NIGHTBITE  
+Unit: IAB207 — Assignment 2
+
+Project: NIGHTBITE
+
 Repository: https://github.com/LauraGalloway38/IAB207-Assignment-2-Group-25
 
 The official declaration template and current teaching-team AI instructions must be checked before submission. If a prescribed form is required, transfer the confirmed information below into it. This record does not replace an assignment/authorship declaration.
