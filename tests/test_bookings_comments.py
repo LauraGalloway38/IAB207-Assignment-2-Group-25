@@ -936,7 +936,7 @@ class IntegrationRegressionTests(NightbiteTestCase):
                 self.assertEqual(checker.negative, [])
                 self.assertEqual({tag: depth for tag, depth in checker.depth.items() if depth}, {})
         for template in (PACKAGE_DIR / 'templates').rglob('*.html'):
-            source = template.read_text()
+            source = template.read_text(encoding="utf-8")
             if template.name != 'base.html':
                 self.assertNotIn('<html', source, template.name)
 

@@ -30,7 +30,7 @@
             <h3>{{ event.title }}</h3>
             <p class="em-meta"><i class="bi bi-calendar3" aria-hidden="true"></i>{{ event.start_datetime.strftime('%d %b %Y · %I:%M %p') }}</p>
             <p class="em-meta"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ event.venue }}, {{ event.suburb }}</p>
-            <div class="em-ticket-row"><div class="em-price">${{ '%.2f'|format(event.ticket_price) }} <small>AUD / ticket</small></div><span>{{ event.remaining_tickets }} / {{ event.ticket_capacity }} remaining</span></div>
+            <div class="em-ticket-row"><div class="em-price">${{ '%.2f'|format(event.ticket_price) }} <small>AUD / ticket</small></div><span>{{ event.remaining_tickets }} of {{ event.ticket_capacity }} tickets remaining</span></div>
             <progress value="{{ event.tickets_sold }}" max="{{ event.ticket_capacity }}" aria-label="{{ event.tickets_sold }} of {{ event.ticket_capacity }} tickets booked"></progress>
             <details><summary>Event description</summary><p>{{ event.description }}</p></details>
             {% if event.acknowledgement_type != 'none' %}<details><summary>Acknowledgement of Country</summary><p>{{ event.acknowledgement_text }}</p></details>{% endif %}
