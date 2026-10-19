@@ -1,72 +1,18 @@
-
 {% extends "event-management-base.html" %}
-
 {% block title %}Cancel Event | NIGHTBITE{% endblock %}
-
-{% block content %}
-
-<header class="page-header">
-    <div class="container">
-
-        <p class="section-kicker">Event management</p>
-
-        <h1>Cancel event</h1>
-
-        <p>Review this action before confirming.</p>
-
-    </div>
-</header>
-
-<main class="confirmation-page">
-
-    <div class="container">
-
-        <section class="confirmation-card"
-                 aria-labelledby="cancel-event-heading">
-
-            <span class="confirmation-icon" aria-hidden="true">
-                <i class="bi bi-exclamation-triangle"></i>
-            </span>
-
-            <h2 id="cancel-event-heading">
-                Cancel {{ event_record.title }}?
-            </h2>
-
-            <p>
-                Existing bookings and comments will be retained.
-                This action cannot be undone here.
-            </p>
-
-            <form method="post"
-                  action="{{ url_for('main.cancel_event', event_id=event_record.id) }}">
-
-                {{ form.hidden_tag() }}
-
-                {% for errors in form.errors.values() %}
-                    {% for error in errors %}
-                        <p class="text-danger" role="alert">
-                            {{ error }}
-                        </p>
-                    {% endfor %}
-                {% endfor %}
-
-                <div class="confirmation-actions">
-
-                    {{ form.submit(class="btn btn-danger") }}
-
-                    <a class="btn btn-form-cancel"
-                       href="{{ url_for('main.my_events') }}">
-                        Keep event / go back
-                    </a>
-
-                </div>
-
-            </form>
-
-        </section>
-
-    </div>
-
-</main>
-
+{% block management_content %}
+<a class="em-link" href="{{ url_for('main.my_events') }}">← Back to My Events</a>
+<section class="em-cancel">
+    <div class="em-cancel-icon"><i class="bi bi-calendar-x" aria-hidden="true"></i></div>
+    <p class="em-eyebrow">Event management</p><h1>Cancel this event?</h1>
+    <p class="em-intro">Take a moment to check the details before confirming.</p>
+    <div class="em-cancel-event"><strong>{{ event_record.title }}</strong><p>{{ event_record.start_datetime.strftime('%d %b %Y · %I:%M %p') }} AEST<br>{{ event_record.venue }}</p></div>
+    <ul><li>The event will be marked as Cancelled.</li><li>Existing bookings and comments will be retained.</li><li>You cannot undo cancellation from this page.</li></ul>
+    <!-- Aarnav: explicit confirmation with existing CSRF protection. -->
+    <form method="post" action="{{ url_for('main.cancel_event', event_id=event_record.id) }}">
+        {{ form.hidden_tag() }}
+        {% for errors in form.errors.values() %}{% for error in errors %}<p class="text-danger" role="alert">{{ error }}</p>{% endfor %}{% endfor %}
+        <div class="em-actions"><a class="em-button em-button-light" href="{{ url_for('main.my_events') }}">Keep event / go back</a>{{ form.submit(class="btn btn-danger", value="Yes, cancel event") }}</div>
+    </form>
+</section>
 {% endblock %}

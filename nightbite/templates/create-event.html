@@ -1,6 +1,7 @@
-{% extends "base.html" %}
+{% extends "event-management-base.html" %}
 {% block title %}{{ "Edit Event" if event_record else "Create Event" }} | NIGHTBITE{% endblock %}
-{% block content %}
+{% block management_content %}
+    <p><a class="em-link" href="{{ url_for('main.my_events') }}">← Back to My Events</a></p>
     <!-- Page Header -->
     <header class="page-header">
         <div class="container">
