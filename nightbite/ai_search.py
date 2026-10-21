@@ -16,7 +16,7 @@ MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 SEMANTIC_WEIGHT = 0.70
 KEYWORD_WEIGHT = 0.30
-MIN_RELEVANCE_SCORE = 0.30
+MIN_RELEVANCE_SCORE = 0.20
 
 logger = logging.getLogger(__name__)
 
