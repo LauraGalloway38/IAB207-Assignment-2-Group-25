@@ -207,24 +207,22 @@ class AISearchTests(unittest.TestCase):
         self.assertEqual(results, self.events)
 
     @patch("nightbite.ai_search.get_model")
-    def test_007_keyword_fallback_when_ai_unavailable(
+    def test_007_keyword_search_matches_title(
         self,
         mock_model,
     ):
-        mock_model.side_effect = RuntimeError(
-            "AI model unavailable"
-        )
+        mock_model.side_effect = RuntimeError("AI unavailable")
 
         results = hybrid_search(
-            "tacos",
+            "Taco",
             self.events,
         )
 
-        self.assertTrue(results)
-        self.assertEqual(results[0], self.tacos)
+        self.assertEqual(results, [self.tacos])
 
     @patch("nightbite.ai_search.get_event_embedding")
     @patch("nightbite.ai_search.get_model")
+    
     def test_008_semantic_similarity_affects_ranking(
         self,
         mock_model,
